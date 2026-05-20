@@ -1,0 +1,4 @@
+Replica,Frames,Mean Volume (Å³),Mean Hydrophobicity,Mean Polarity,Mean Charge,Volume > 400 Å³ (%)
+Replica 1 (500 ns eq),10001,729.3 ± 218.7,11.03 ± 5.04,14.5,3.4,92.7%
+Replica 2 (1000 ns eq),10001,763.3 ± 233.4,16.56 ± 7.18,13.2,4.8,93.6%
+Replica 3 (1500 ns eq),10001,726.2 ± 213.4,12.89 ± 5.13,14.2,3.2,93.0%

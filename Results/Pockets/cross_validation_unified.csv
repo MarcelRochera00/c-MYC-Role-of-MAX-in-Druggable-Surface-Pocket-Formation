@@ -1,0 +1,7 @@
+Chain,Protein,Residue,Number,Salt Bridge,MM-GBSA,MDpocket,Score,_score_val
+A,MYC,ARG,913,-,✓,SP3,2/3,2
+A,MYC,GLU,916,-,✓,SP3,2/3,2
+A,MYC,ARG,970,✓,✓,-,2/3,2
+B,MAX,ARG,214,-,✓,SP2,2/3,2
+B,MAX,ARG,239,-,✓,SP3,2/3,2
+B,MAX,GLU,248,-,✓,SP1,2/3,2

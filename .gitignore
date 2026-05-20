@@ -1,0 +1,13 @@
+# XTC files
+*.xtc
+
+# Folders
+MYC/
+MYC-MAX/
+.gmx_mmpbsa_temp/
+.vscode/
+deprecated/
+
+essential_metadata/MYC-MAX-500/mdpocket_pocket1_stats_mdpocket_atoms.pdb
+essential_metadata/MYC-MAX-1000/mdpocket_pocket1_stats_mdpocket_atoms.pdb
+essential_metadata/MYC-MAX-1500/mdpocket_pocket1_stats_mdpocket_atoms.pdb

@@ -1,0 +1,7 @@
+MDAnalysis
+numpy
+matplotlib
+seaborn
+pandas
+scipy
+# Note: gmx_MMPBSA and mdpocket must be installed separately via their respective documentation

@@ -28,7 +28,7 @@ To ensure all dependencies are met, run the scripts in the following order:
 ### 3. `general_analysis.py`
 - **Purpose:** Primary analysis of the complex replicas.
 - **Prerequisites:** Needs `.psf` and `.xtc` files for the complex replicas.
-- **Outputs:** Saves trajectory metrics and MMPBSA results to `Results/Complex/`.
+- **Outputs:** Saves RMSD, RMSF and Rg results to `Results/Complex/`.
 
 ### 4. `analyze_mdpocket.py`
 - **Purpose:** Analyzes cavity volume and residue composition over time.

@@ -245,9 +245,9 @@ if 1 in RUN:
         ax.legend(fontsize=9)
         ax.grid(alpha=0.3)
         plt.tight_layout()
-        plt.savefig(f"{OUT}/03_interface_contacts.png", dpi=150)
+        plt.savefig(f"{OUT}/3.1_interface_contacts.png", dpi=150)
         plt.close()
-        print(f"  → Saved {OUT}/03_interface_contacts.png")
+        print(f"  → Saved {OUT}/3.1_interface_contacts.png")
 
         if all_contacts:
             fig, ax = plt.subplots(figsize=(7, 4))
@@ -260,9 +260,9 @@ if 1 in RUN:
             ax.set_title("Mean MYC-MAX Interface Contacts per Replica", fontsize=12, fontweight="bold")
             ax.grid(axis="y", alpha=0.3)
             plt.tight_layout()
-            plt.savefig(f"{OUT}/03b_contacts_summary.png", dpi=150)
+            plt.savefig(f"{OUT}/3.2_contacts_summary.png", dpi=150)
             plt.close()
-            print(f"  → Saved {OUT}/03b_contacts_summary.png")
+            print(f"  → Saved {OUT}/3.2_contacts_summary.png")
     except Exception as e:
         print(f"  ✗ Contacts section failed: {e}")
 
@@ -419,9 +419,9 @@ dec_verbose=3,
         ax.legend(fontsize=8)
         ax.grid(axis="y", alpha=0.3)
         plt.tight_layout()
-        plt.savefig(f"{OUT}/04_mmgbsa.png", dpi=150)
+        plt.savefig(f"{OUT}/3.3_mmgbsa.png", dpi=150)
         plt.close()
-        print(f"\n  → Saved {OUT}/04_mmgbsa.png")
+        print(f"\n  → Saved {OUT}/3.3_mmgbsa.png")
 
         overall_mean = np.mean([r.mean() for r in mmpbsa_results])
         overall_std  = np.std([r.mean()  for r in mmpbsa_results])
@@ -458,7 +458,7 @@ dec_verbose=3,
                             mpatches.Patch(color="#3498db", label="MAX (PROB)")], fontsize=9)
         ax.grid(axis="x", alpha=0.3)
         plt.tight_layout()
-        out_path = f"{OUT}/04b_hotspots_rep{i+1}.png"
+        out_path = f"{OUT}/3.4_hotspots_rep{i+1}.png"
         plt.savefig(out_path, dpi=150)
         plt.close()
         print(f"  → Saved {out_path}")
@@ -503,9 +503,9 @@ dec_verbose=3,
                                 mpatches.Patch(color="#3498db", label="MAX (PROB)")], fontsize=9)
             ax.grid(axis="x", alpha=0.3)
             plt.tight_layout()
-            plt.savefig(f"{OUT}/04c_hotspots_consensus.png", dpi=150)
+            plt.savefig(f"{OUT}/3.5_hotspots_consensus.png", dpi=150)
             plt.close()
-            print(f"  → Saved {OUT}/04c_hotspots_consensus.png")
+            print(f"  → Saved {OUT}/3.5_hotspots_consensus.png")
 
             summary_path = f"{OUT}/04d_hotspots_summary.txt"
             with open(summary_path, "w") as f:
@@ -737,12 +737,12 @@ if 3 in RUN:
         consensus_bridges,
         title=(f"Consensus Inter-chain Salt Bridges — MYC-MAX\n"
                f"(present in all {len(TRAJS)} replicas, cutoff {SALT_DIST} Å)"),
-        outpath=f"{OUT}/05_salt_bridges_consensus.png",
+        outpath=f"{OUT}/3.6_salt_bridges_consensus.png",
     )
     _plot_salt_bridges(
         partial_bridges,
         title=f"Partial-consensus Salt Bridges (2/{len(TRAJS)} replicas) — MYC-MAX",
-        outpath=f"{OUT}/05b_salt_bridges_partial.png",
+        outpath=f"{OUT}/3.7_salt_bridges_partial.png",
         alpha=0.75,
     )
 

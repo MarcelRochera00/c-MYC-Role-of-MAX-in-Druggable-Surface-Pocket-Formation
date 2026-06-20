@@ -60,7 +60,7 @@ FRAME_DT_PS = 100  # ps between saved frames — adjust to your xtc frequency
 
 OUT = "Results/Comparison"
 os.makedirs(OUT, exist_ok=True)
-OUTPUT_PLOT = os.path.join(OUT, "myc_vs_mycmax_comparison.png")
+OUTPUT_PLOT = os.path.join(OUT, "2.1_myc_vs_mycmax_comparison.png")
 OUTPUT_DATA = os.path.join(OUT, "myc_vs_mycmax_statistics.txt")
 
 REPLICA_ALPHAS = [0.55, 0.45, 0.35]

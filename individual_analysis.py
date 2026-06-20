@@ -165,7 +165,7 @@ if 1 in RUN:
     plt.ylabel("RMSD (Å)")
     plt.title("Individual Protein RMSD")
     plt.legend()
-    plt.savefig(f"{OUT}/01_rmsd.png", dpi=300)
+    plt.savefig(f"{OUT}/1.1_rmsd.png", dpi=300)
     plt.close()
 
 if 2 in RUN:
@@ -177,7 +177,7 @@ if 2 in RUN:
     plt.ylabel("RMSF (Å)")
     plt.title("Individual Protein RMSF")
     plt.legend()
-    plt.savefig(f"{OUT}/02_rmsf.png", dpi=300)
+    plt.savefig(f"{OUT}/1.2_rmsf.png", dpi=300)
     plt.close()
 
 if 3 in RUN:
@@ -189,7 +189,7 @@ if 3 in RUN:
     plt.ylabel("Rg (Å)")
     plt.title("Individual Protein Radius of Gyration")
     plt.legend()
-    plt.savefig(f"{OUT}/03_rg.png", dpi=300)
+    plt.savefig(f"{OUT}/1.3_rg.png", dpi=300)
     plt.close()
 
 
@@ -361,7 +361,7 @@ ax.set_ylabel("Rg (Å)")
 ax.legend(loc="upper right")
 
 plt.savefig(
-    f"{OUT}/combined_three_replica_analysis.png",
+    f"{OUT}/1.4_combined_three_replica_analysis.png",
     dpi=300,
     bbox_inches="tight"
 )

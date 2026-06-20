@@ -246,7 +246,7 @@ def main():
     
     out_csv = os.path.join(OUTPUT_DIR, "cross_validation_unified.csv")
     df_filtered.to_csv(out_csv, index=False)
-    plot_consensus_table(df_filtered, os.path.join(OUTPUT_DIR, "cross_validation_table.png"))
+    plot_consensus_table(df_filtered, os.path.join(OUTPUT_DIR, "5.1_cross_validation_table.png"))
     write_pymol_script(df_filtered, os.path.join(OUTPUT_DIR, "visualize_cross_validation.pml"))
     
     print(f"\n[✓] Finished. {len(df_filtered)} high-confidence residues identified.")

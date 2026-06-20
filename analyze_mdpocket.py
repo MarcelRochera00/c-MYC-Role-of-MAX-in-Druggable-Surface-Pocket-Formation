@@ -129,7 +129,7 @@ def plot_timeseries(dfs):
                  fontsize=13, fontweight="bold", y=1.01)
     plt.tight_layout()
 
-    out = os.path.join(OUTPUT_DIR, "pocket_timeseries.png")
+    out = os.path.join(OUTPUT_DIR, "4.1_pocket_timeseries.png")
     plt.savefig(out, facecolor="white")
     print(f"Saved: {out}")
     plt.close()
@@ -154,7 +154,7 @@ def plot_volume_distribution(dfs):
     ax.legend(ncol=2)
 
     plt.tight_layout()
-    out = os.path.join(OUTPUT_DIR, "volume_distribution.png")
+    out = os.path.join(OUTPUT_DIR, "4.2_volume_distribution.png")
     plt.savefig(out, facecolor="white")
     print(f"Saved: {out}")
     plt.close()
@@ -190,7 +190,7 @@ def plot_residue_composition(dfs):
                  fontsize=13, fontweight="bold", y=1.02)
 
     plt.tight_layout()
-    out = os.path.join(OUTPUT_DIR, "residue_composition.png")
+    out = os.path.join(OUTPUT_DIR, "4.3_residue_composition.png")
     plt.savefig(out, facecolor="white")
     print(f"Saved: {out}")
     plt.close()
@@ -222,7 +222,7 @@ def plot_residue_heatmap(dfs):
                  fontsize=13, fontweight="bold", y=1.01)
     plt.tight_layout()
 
-    out = os.path.join(OUTPUT_DIR, "residue_heatmap.png")
+    out = os.path.join(OUTPUT_DIR, "4.4_residue_heatmap.png")
     plt.savefig(out, facecolor="white")
     print(f"Saved: {out}")
     plt.close()

@@ -1,0 +1,26 @@
+Consensus MM-GBSA Hotspot Residues — MYC-MAX
+Replicas: 3 | Top 20 by mean contribution
+Settings: igb=2, idecomp=1, interval=50
+============================================================
+Residue                      Mean (kcal/mol)        Std    Protein
+------------------------------------------------------------
+L:B:ARG:226                          -110.88       0.47        MAX
+L:B:ARG:254                          -109.59       0.17        MAX
+R:A:ARG:925                          -109.51       0.23        MYC
+R:A:ARG:970                          -109.43       0.14        MYC
+R:A:ARG:913                          -109.41       0.19        MYC
+R:A:ARG:968                          -109.41       0.04        MYC
+L:B:ARG:279                          -109.02       0.11        MAX
+R:A:ARG:971                          -108.78       0.09        MYC
+L:B:ARG:214                          -108.69       0.15        MAX
+L:B:ARG:269                          -108.69       0.10        MAX
+L:B:ARG:239                          -107.23       0.10        MAX
+L:B:ASP:220                           -43.08       0.08        MAX
+R:A:ASP:965                           -42.41       0.16        MYC
+L:B:ASP:265                           -42.32       0.01        MAX
+L:B:ASP:244                           -42.19       0.11        MAX
+L:B:ASP:263                           -41.83       0.05        MAX
+R:A:ASP:926                           -41.26       0.10        MYC
+R:A:GLU:916                           -34.73       0.08        MYC
+R:A:GLU:972                           -34.63       0.06        MYC
+L:B:GLU:248                           -34.49       0.06        MAX

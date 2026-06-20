@@ -285,7 +285,6 @@ if 2 in RUN:
     MMPBSA_INPUT = """&general
 startframe=1,
 interval=50,
-PBRadii=7,
 /
 
 &gb
@@ -507,7 +506,7 @@ dec_verbose=1,
             plt.close()
             print(f"  → Saved {OUT}/3.5_hotspots_consensus.png")
 
-            summary_path = f"{OUT}/04d_hotspots_summary.txt"
+            summary_path = f"{OUT}/3.0_hotspots_summary.txt"
             with open(summary_path, "w") as f:
                 f.write("Consensus MM-GBSA Hotspot Residues — MYC-MAX\n")
                 f.write(f"Replicas: {len(decomp_results)} | Top {TOP_N_HOTSPOTS} by mean contribution\n")

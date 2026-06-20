@@ -368,58 +368,63 @@ plt.savefig(
 
 plt.close()
 
+# =============================================================================
+# STATISTICS — SD entre réplicas (reproducibilidad), no entre frames
+# =============================================================================
+
 with open(f"{OUT}/analysis_statistics.txt", "w") as f:
 
     f.write("MYC THREE-REPLICA ANALYSIS\n")
     f.write("=" * 60 + "\n\n")
 
-    for i in range(3):
+    # --- Por réplica: mean ± SD sobre los frames de esa réplica ---
+    for i in range(len(TRAJS)):
 
         f.write(f"Replica {i+1}\n")
         f.write("-" * 20 + "\n")
 
         if results["rmsd"]:
-            f.write(
-                f"RMSD mean = {np.mean(results['rmsd'][i]):.3f} Å\n"
-            )
-            f.write(
-                f"RMSD std  = {np.std(results['rmsd'][i]):.3f} Å\n"
-            )
+            f.write(f"RMSD mean = {np.mean(results['rmsd'][i]):.3f} Å\n")
+            f.write(f"RMSD std  = {np.std(results['rmsd'][i], ddof=1):.3f} Å\n")
 
         if results["rg"]:
-            f.write(
-                f"Rg mean   = {np.mean(results['rg'][i]):.3f} Å\n"
-            )
-            f.write(
-                f"Rg std    = {np.std(results['rg'][i]):.3f} Å\n"
-            )
+            f.write(f"Rg mean   = {np.mean(results['rg'][i]):.3f} Å\n")
+            f.write(f"Rg std    = {np.std(results['rg'][i], ddof=1):.3f} Å\n")
 
         if results["rmsf"]:
-            f.write(
-                f"RMSF mean = {np.mean(results['rmsf'][i]):.3f} Å\n"
-            )
-            f.write(
-                f"RMSF std  = {np.std(results['rmsf'][i]):.3f} Å\n"
-            )
+            f.write(f"RMSF mean = {np.mean(results['rmsf'][i]):.3f} Å\n")
+            f.write(f"RMSF std  = {np.std(results['rmsf'][i], ddof=1):.3f} Å\n")
 
         f.write("\n")
 
+    # --- Global: mean ± SD entre réplicas (reproducibilidad) ---
+    # Se calcula la media de cada réplica y luego SD sobre esas 3 medias.
+    # Esto es lo comparable con el script MYC_(MYC:MAX)_analysis.py.
+    f.write("=" * 60 + "\n")
+    f.write("Global statistics (mean ± SD across replicas, ddof=1)\n")
+    f.write("-" * 60 + "\n")
+
+    if results["rmsd"]:
+        rep_means_rmsd = [np.mean(r) for r in results["rmsd"]]
+        f.write(
+            f"Global RMSD mean ± SD = "
+            f"{np.mean(rep_means_rmsd):.3f} ± {np.std(rep_means_rmsd, ddof=1):.3f} Å\n"
+        )
+
+    if results["rmsf"]:
+        rep_means_rmsf = [np.mean(r) for r in results["rmsf"]]
+        f.write(
+            f"Global RMSF mean ± SD = "
+            f"{np.mean(rep_means_rmsf):.3f} ± {np.std(rep_means_rmsf, ddof=1):.3f} Å\n"
+        )
+
+    if results["rg"]:
+        rep_means_rg = [np.mean(r) for r in results["rg"]]
+        f.write(
+            f"Global Rg mean ± SD   = "
+            f"{np.mean(rep_means_rg):.3f} ± {np.std(rep_means_rg, ddof=1):.3f} Å\n"
+        )
+
     f.write("=" * 60 + "\n")
 
-    f.write(
-        f"Global RMSD mean ± SD = "
-        f"{mean_rmsd.mean():.3f} ± {std_rmsd.mean():.3f} Å\n"
-    )
-
-    f.write(
-        f"Global RMSF mean ± SD = "
-        f"{mean_rmsf.mean():.3f} ± {std_rmsf.mean():.3f} Å\n"
-    )
-
-    f.write(
-        f"Global Rg mean ± SD = "
-        f"{mean_rg.mean():.3f} ± {std_rg.mean():.3f} Å\n"
-    )
-    
-    
 print(f"\nAnalysis complete. Results saved in '{OUT}/'")

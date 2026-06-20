@@ -1,7 +1,6 @@
 &general
 startframe=1,
 interval=50,
-PBRadii=7,
 /
 
 &gb

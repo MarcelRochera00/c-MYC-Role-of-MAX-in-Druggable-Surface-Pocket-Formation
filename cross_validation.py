@@ -70,7 +70,7 @@ FALLBACK_SP = {
     "SP3": {("B", 239, "ARG"), ("B", 240, "ALA"), ("B", 238, "SER"), ("A", 913, "ARG"), ("A", 916, "GLU"), ("A", 917, "LEU")},
 }
 
-MMPBSA_ENERGY_CUTOFF = -1.0 
+N_HOTSPOTS = 20
 
 TABLE_COLORS = {
     "header":     "#2C3E50",
@@ -92,8 +92,14 @@ def load_external_data():
     print("\n[Loading External Data]")
     if os.path.exists(CSV_MMPBSA):
         df_gb = pd.read_csv(CSV_MMPBSA)
-        top_gb = df_gb[df_gb["Energy_Mean"] <= MMPBSA_ENERGY_CUTOFF]
-        for _, row in top_gb.iterrows(): hotspots.add((row["Chain"], int(row["Number"]), row["Residue"]))
+        top_gb = (
+            df_gb
+            .sort_values("Energy_Mean", ascending=True)
+            .head(N_HOTSPOTS)
+        )
+
+        for _, row in top_gb.iterrows():
+            hotspots.add((row["Chain"], int(row["Number"]), row["Residue"]))
         print(f"  → Loaded {len(hotspots)} MM-GBSA hotspots from CSV.")
     else:
         print("  → CSV_MMPBSA not found. Using Fallback MM-GBSA data.")

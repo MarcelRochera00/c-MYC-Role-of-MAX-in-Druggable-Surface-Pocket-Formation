@@ -8,7 +8,7 @@ RMSD std  = 2.875 Å
 Rg mean   = 21.606 Å
 Rg std    = 0.989 Å
 RMSF mean = 4.136 Å
-RMSF std  = 1.929 Å
+RMSF std  = 1.940 Å
 
 Replica 2
 --------------------
@@ -17,7 +17,7 @@ RMSD std  = 2.669 Å
 Rg mean   = 24.205 Å
 Rg std    = 1.493 Å
 RMSF mean = 4.070 Å
-RMSF std  = 1.879 Å
+RMSF std  = 1.890 Å
 
 Replica 3
 --------------------
@@ -26,9 +26,12 @@ RMSD std  = 3.154 Å
 Rg mean   = 22.737 Å
 Rg std    = 0.958 Å
 RMSF mean = 4.068 Å
-RMSF std  = 1.875 Å
+RMSF std  = 1.886 Å
 
 ============================================================
-Global RMSD mean ± SD = 10.990 ± 3.484 Å
-Global RMSF mean ± SD = 4.091 ± 0.333 Å
-Global Rg mean ± SD = 22.849 ± 1.306 Å
+Global statistics (mean ± SD across replicas, ddof=1)
+------------------------------------------------------------
+Global RMSD mean ± SD = 10.990 ± 3.404 Å
+Global RMSF mean ± SD = 4.091 ± 0.039 Å
+Global Rg mean ± SD   = 22.849 ± 1.303 Å
+============================================================

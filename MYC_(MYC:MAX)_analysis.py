@@ -284,22 +284,23 @@ def write_stats(results_dict):
         lines.append(f"  Condition: {cname}")
         lines.append(f"{'-'*70}")
 
-        rep_rmsd_means, rep_rg_means = [], []
+        rep_rmsd_means, rep_rmsf_means, rep_rg_means = [], [], []
 
         for i in range(len(r["rmsd"])):
-            rmsd_m = np.mean(r["rmsd"][i]); rmsd_s = np.std(r["rmsd"][i])
-            rmsf_m = np.mean(r["rmsf"][i]); rmsf_s = np.std(r["rmsf"][i])
-            rg_m   = np.mean(r["rg"][i]);   rg_s   = np.std(r["rg"][i])
+            rmsd_m = np.mean(r["rmsd"][i]); rmsd_s = np.std(r["rmsd"][i], ddof=1)
+            rmsf_m = np.mean(r["rmsf"][i]); rmsf_s = np.std(r["rmsf"][i], ddof=1)
+            rg_m   = np.mean(r["rg"][i]);   rg_s   = np.std(r["rg"][i],   ddof=1)
             lines.append(f"  Replica {i+1}:")
             lines.append(f"    RMSD : {rmsd_m:.2f} +/- {rmsd_s:.2f} Å")
             lines.append(f"    RMSF : {rmsf_m:.2f} +/- {rmsf_s:.2f} Å")
             lines.append(f"    Rg   : {rg_m:.3f} +/- {rg_s:.3f} Å")
             rep_rmsd_means.append(rmsd_m)
+            rep_rmsf_means.append(rmsf_m)
             rep_rg_means.append(rg_m)
 
-        g_rmsd = np.mean(rep_rmsd_means); g_rmsd_sd = np.std(rep_rmsd_means)
-        g_rmsf = np.mean(r["rmsf"]);      g_rmsf_sd = np.std(r["rmsf"])
-        g_rg   = np.mean(rep_rg_means);   g_rg_sd   = np.std(rep_rg_means)
+        g_rmsd = np.mean(rep_rmsd_means); g_rmsd_sd = np.std(rep_rmsd_means, ddof=1)
+        g_rmsf = np.mean(rep_rmsf_means); g_rmsf_sd = np.std(rep_rmsf_means, ddof=1)
+        g_rg   = np.mean(rep_rg_means);   g_rg_sd   = np.std(rep_rg_means,   ddof=1)
 
         lines.append(f"\n  Global (across replicas):")
         lines.append(f"    RMSD : {g_rmsd:.2f} +/- {g_rmsd_sd:.2f} Å")

@@ -1,4 +1,4 @@
-load /home/marcel/Project1/crystal_proteins.pdb, prot
+load /home/marcel/Desktop/Project1/crystal_proteins.pdb, prot
 hide everything, prot
 show cartoon, prot
 color gray80, prot

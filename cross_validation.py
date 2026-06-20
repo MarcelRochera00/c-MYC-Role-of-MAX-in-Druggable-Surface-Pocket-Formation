@@ -192,7 +192,8 @@ def main():
     hotspots, salt_bridges = load_external_data()
     sp_residues, sp_centroids = detect_subpockets()
     all_sp_residues = set().union(*sp_residues.values())
-
+    print("SP residues:", len(all_sp_residues))
+    '''
     print("\n[Parsing MDpocket PDBs]")
     replica_sets = []
     for name, path in REPLICA_ATOMS.items():
@@ -207,17 +208,24 @@ def main():
             for j in range(i+1, len(replica_sets)):
                 mdpocket_any2 |= (replica_sets[i] & replica_sets[j])
     print(f"  → MDpocket Any-2 Consensus: {len(mdpocket_any2)} residues.")
-
+    '''
     # Build Table
-    all_res = salt_bridges | hotspots | mdpocket_any2 | all_sp_residues
+    #all_res = salt_bridges | hotspots | mdpocket_any2 | all_sp_residues 
+    all_res = salt_bridges | hotspots | all_sp_residues
     rows = []
     print("\n[Assigning Pockets & Generating Table]")
     for res in sorted(all_res, key=lambda x: (x[0], x[1])):
-        in_sb, in_gb, in_mp = res in salt_bridges, res in hotspots, res in mdpocket_any2
+        #in_sb, in_gb, in_mp = res in salt_bridges, res in hotspots, res in mdpocket_any2
+        in_sb, in_gb = res in salt_bridges, res in hotspots
         sps = [name for name, s in sp_residues.items() if res in s]
         
         # NEAREST SP FALLBACK
+        '''
         if in_mp and not sps and sp_centroids:
+            nearest = get_nearest_sp(res, sp_centroids)
+            if nearest: sps = [nearest]
+        '''
+        if not sps and sp_centroids:
             nearest = get_nearest_sp(res, sp_centroids)
             if nearest: sps = [nearest]
             

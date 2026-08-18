@@ -1,0 +1,14 @@
+Inter-chain Salt Bridge Occupancy — MYC-MAX
+Distance cutoff: 4.0 Å | Occupancy threshold: 30%
+Replicas: 3
+======================================================================
+
+=== CONSENSUS (present in ALL replicas) ===
+Bridge                                        Direction      Mean occ      Std
+----------------------------------------------------------------------
+LYS256(MAX)--GLU957(MYC)                      MAX→MYC           0.899    0.033
+ARG970(MYC)--GLU275(MAX)                      MYC→MAX           0.704    0.144
+
+=== PARTIAL CONSENSUS (2 of 3 replicas) ===
+Bridge                                        Direction      Mean occ      Std
+----------------------------------------------------------------------

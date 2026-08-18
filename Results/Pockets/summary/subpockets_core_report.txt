@@ -1,0 +1,78 @@
+Sub-pocket report
+Source frequency grid : MYC-MAX/mdpout_freq_grid.dx
+Source density grid   : MYC-MAX/mdpout_dens_grid.dx
+Reference structure   : MYC-MAX/MYC-MAX-500/charmm-gui/gromacs/crystal_proteins.pdb
+Isovalue (frequency)  : 0.5
+Min voxels per pocket : 5
+Residue cutoff        : 5.0 A (CA to nearest pocket voxel)
+Total sub-pockets     : 6
+======================================================================
+
+SP1  (mdpocket internal id 5, rank 1 by volume)
+--------------------------------------------------
+  single-chain pocket
+  Volume            : 93.0 A^3  (93 voxels)
+  Frequency (mean/max) : 0.613 / 0.780
+  Density (mean/max)   : 2.12 / 5.85
+  Centroid (x,y,z)  : (55.31, 66.57, 61.84)
+  Chains spanned    : B
+  Residues (4 total, within 5.0 A):
+    Chain B: TYR249 (3.73 A), PRO230 (4.02 A), GLU248 (4.64 A), LYS245 (4.74 A)
+
+SP2  (mdpocket internal id 6, rank 2 by volume)
+--------------------------------------------------
+  INTERFACE POCKET (spans multiple chains)
+  Volume            : 89.0 A^3  (89 voxels)
+  Frequency (mean/max) : 0.620 / 0.738
+  Density (mean/max)   : 2.25 / 7.53
+  Centroid (x,y,z)  : (58.89, 51.20, 47.91)
+  Chains spanned    : A, B
+  Residues (6 total, within 5.0 A):
+    Chain A: ARG914 (3.58 A), ARG913 (3.65 A), LEU917 (3.75 A)
+    Chain B: ARG239 (3.17 A), SER238 (3.64 A), ALA240 (3.70 A)
+
+SP3  (mdpocket internal id 3, rank 3 by volume)
+--------------------------------------------------
+  INTERFACE POCKET (spans multiple chains)
+  Volume            : 45.0 A^3  (45 voxels)
+  Frequency (mean/max) : 0.538 / 0.599
+  Density (mean/max)   : 2.00 / 3.90
+  Centroid (x,y,z)  : (42.88, 49.13, 43.56)
+  Chains spanned    : A, B
+  Residues (5 total, within 5.0 A):
+    Chain A: VAL940 (4.13 A), LYS939 (4.44 A), PRO938 (4.63 A)
+    Chain B: ARG214 (3.07 A), ILE218 (4.99 A)
+
+SP4  (mdpocket internal id 1, rank 4 by volume)
+--------------------------------------------------
+  single-chain pocket
+  Volume            : 26.0 A^3  (26 voxels)
+  Frequency (mean/max) : 0.540 / 0.596
+  Density (mean/max)   : 3.23 / 5.55
+  Centroid (x,y,z)  : (36.77, 61.01, 57.97)
+  Chains spanned    : A
+  Residues (3 total, within 5.0 A):
+    Chain A: TYR949 (3.15 A), ALA948 (3.73 A), LYS945 (3.86 A)
+
+SP5  (mdpocket internal id 4, rank 5 by volume)
+--------------------------------------------------
+  single-chain pocket
+  Volume            : 21.0 A^3  (21 voxels)
+  Frequency (mean/max) : 0.520 / 0.540
+  Density (mean/max)   : 2.06 / 3.75
+  Centroid (x,y,z)  : (50.86, 49.09, 46.87)
+  Chains spanned    : A
+  Residues (2 total, within 5.0 A):
+    Chain A: LYS918 (4.00 A), ARG914 (4.56 A)
+
+SP6  (mdpocket internal id 2, rank 6 by volume)
+--------------------------------------------------
+  single-chain pocket
+  Volume            : 18.0 A^3  (18 voxels)
+  Frequency (mean/max) : 0.533 / 0.582
+  Density (mean/max)   : 2.17 / 4.01
+  Centroid (x,y,z)  : (40.43, 64.70, 68.60)
+  Chains spanned    : B
+  Residues (3 total, within 5.0 A):
+    Chain B: ARG254 (3.04 A), HSD258 (3.42 A), ASN257 (3.75 A)
+

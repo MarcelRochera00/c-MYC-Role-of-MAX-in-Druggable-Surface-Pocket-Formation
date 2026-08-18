@@ -1,0 +1,37 @@
+MYC THREE-REPLICA ANALYSIS
+============================================================
+
+Replica 1
+--------------------
+RMSD mean = 13.316 Å
+RMSD std  = 3.527 Å
+Rg mean   = 21.983 Å
+Rg std    = 1.314 Å
+RMSF mean = 4.745 Å
+RMSF std  = 1.964 Å
+
+Replica 2
+--------------------
+RMSD mean = 6.899 Å
+RMSD std  = 2.683 Å
+Rg mean   = 24.305 Å
+Rg std    = 1.579 Å
+RMSF mean = 4.172 Å
+RMSF std  = 1.811 Å
+
+Replica 3
+--------------------
+RMSD mean = 11.424 Å
+RMSD std  = 3.124 Å
+Rg mean   = 22.692 Å
+Rg std    = 0.965 Å
+RMSF mean = 4.024 Å
+RMSF std  = 1.837 Å
+
+============================================================
+Global statistics (mean ± SD across replicas, ddof=1)
+------------------------------------------------------------
+Global RMSD mean ± SD = 10.546 ± 3.297 Å
+Global RMSF mean ± SD = 4.313 ± 0.381 Å
+Global Rg mean ± SD   = 22.993 ± 1.190 Å
+============================================================

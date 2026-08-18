@@ -1,0 +1,7 @@
+sp_name,pocket_id,rank,n_voxels,volume_A3,mean_freq,max_freq,mean_density,max_density,centroid_x,centroid_y,centroid_z,n_residues,chains_spanned,is_interface_pocket
+SP1,5,1,93,93.0,0.613,0.78,2.12,5.85,55.31,66.57,61.84,4,B,False
+SP2,6,2,89,89.0,0.62,0.738,2.25,7.53,58.89,51.2,47.91,6,A|B,True
+SP3,3,3,45,45.0,0.538,0.599,2.0,3.9,42.88,49.13,43.56,5,A|B,True
+SP4,1,4,26,26.0,0.54,0.596,3.23,5.55,36.77,61.01,57.97,3,A,False
+SP5,4,5,21,21.0,0.52,0.54,2.06,3.75,50.86,49.09,46.87,2,A,False
+SP6,2,6,18,18.0,0.533,0.582,2.17,4.01,40.43,64.7,68.6,3,B,False

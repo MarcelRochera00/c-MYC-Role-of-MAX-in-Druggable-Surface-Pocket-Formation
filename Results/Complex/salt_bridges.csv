@@ -1,0 +1,3 @@
+Residue_A_Name,Residue_A_Number,Residue_B_Name,Residue_B_Number,Mean_Occupancy,Consensus
+ARG,970,GLU,275,0.704,3/3
+GLU,957,LYS,256,0.899,3/3

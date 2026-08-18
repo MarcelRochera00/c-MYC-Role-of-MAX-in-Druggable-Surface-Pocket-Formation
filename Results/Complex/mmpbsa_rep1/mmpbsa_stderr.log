@@ -1,0 +1,236 @@
+[INFO   ] Starting gmx_MMPBSA 1.6.4+21.gccbb3a8
+[INFO   ] Command-line
+  mpirun -np 8 gmx_MMPBSA MPI -O -i /home/marcel/Desktop/Project1/Results/Complex/mmpbsa_rep1/mmpbsa.in -cs /home/marcel/Desktop/Project1/MYC-MAX/MYC-MAX-500/charmm-gui/gromacs/run1/step6.1_production.tpr -ct /home/marcel/Desktop/Project1/MYC-MAX/MYC-MAX-500/charmm-gui/gromacs/run1/step6.0_proteins_only.xtc -ci /home/marcel/Desktop/Project1/MYC-MAX/MYC-MAX-1000/charmm-gui/gromacs/index-new.ndx -cg 16 17 -cp /home/marcel/Desktop/Project1/MYC-MAX/MYC-MAX-1000/charmm-gui/gromacs/topol.top -o /home/marcel/Desktop/Project1/Results/Complex/mmpbsa_rep1/FINAL_RESULTS_MMPBSA.dat -eo /home/marcel/Desktop/Project1/Results/Complex/mmpbsa_rep1/FINAL_RESULTS_MMPBSA.csv -deo /home/marcel/Desktop/Project1/Results/Complex/mmpbsa_rep1/DECOMP_RESULTS.csv
+
+[INFO   ] Checking /home/marcel/Desktop/Project1/Results/Complex/mmpbsa_rep1/mmpbsa.in input file...
+[INFO   ] Checking /home/marcel/Desktop/Project1/Results/Complex/mmpbsa_rep1/mmpbsa.in input file...Done.
+
+[INFO   ] Checking external programs...
+[INFO   ] cpptraj found! Using /home/marcel/miniconda3/envs/gromacs/bin/cpptraj
+[INFO   ] tleap found! Using /home/marcel/miniconda3/envs/gromacs/bin/tleap
+[INFO   ] parmchk2 found! Using /home/marcel/miniconda3/envs/gromacs/bin/parmchk2
+[INFO   ] sander found! Using /home/marcel/miniconda3/envs/gromacs/bin/sander
+[INFO   ] Using GROMACS version > 5.x.x!
+[INFO   ] gmx found! Using /opt/gromacs-25/bin/gmx
+[INFO   ] Checking external programs...Done.
+
+[INFO   ] Building AMBER topologies from GROMACS files...
+[INFO   ] Get PDB files from GROMACS structures files...
+[INFO   ] Making gmx_MMPBSA index for complex...
+[INFO   ] Normal Complex: Saving group MYC_MAX (16_17) in _GMXMMPBSA_COM_index.ndx file as _GMXMMPBSA_COM.pdb
+[INFO   ] No receptor structure file was defined. Using ST approach...
+[INFO   ] Using receptor structure from complex to generate AMBER topology
+[INFO   ] Normal Receptor: Saving group MYC (16) in _GMXMMPBSA_COM_index.ndx file as _GMXMMPBSA_REC.pdb
+[INFO   ] No ligand structure file was defined. Using ST approach...
+[INFO   ] Using ligand structure from complex to generate AMBER topology
+[INFO   ] Normal Ligand: Saving group MAX (17) in _GMXMMPBSA_COM_index.ndx file as _GMXMMPBSA_LIG.pdb
+[INFO   ] Checking the structures consistency...
+[INFO   ] 
+[INFO   ] Using topology conversion. Setting radiopt = 0...
+[INFO   ] Building Normal Complex Amber topology...
+[INFO   ] Detected CHARMM force field topology format...
+[INFO   ] Assigning PBRadii mbondi2 to Complex...
+[INFO   ] Writing Normal Complex AMBER topology...
+[INFO   ] No Receptor topology file was defined. Using ST approach...
+[INFO   ] Building AMBER Receptor topology from Complex...
+[INFO   ] Assigning PBRadii mbondi2 to Receptor...
+[INFO   ] Writing Normal Receptor AMBER topology...
+[INFO   ] No Ligand topology file was defined. Using ST approach...
+[INFO   ] Building AMBER Ligand topology from Complex...
+[INFO   ] Assigning PBRadii mbondi2 to Ligand...
+[INFO   ] Writing Normal Ligand AMBER topology...
+[INFO   ] Selecting residues by distance (6 Å) between receptor and ligand for decomposition analysis...
+[INFO   ] Selected 112 residues:
+R:A:ARG:903 R:A:ARG:913 R:A:ARG:914 R:A:GLU:916 R:A:LEU:917 R:A:LYS:918 R:A:ARG:919 R:A:SER:920 R:A:PHE:921 R:A:PHE:922
+R:A:ALA:923 R:A:LEU:924 R:A:ARG:925 R:A:ASP:926 R:A:GLN:927 R:A:ILE:928 R:A:PRO:929 R:A:LYS:939 R:A:VAL:940 R:A:ILE:942
+R:A:LEU:943 R:A:LYS:944 R:A:ALA:946 R:A:THR:947 R:A:TYR:949 R:A:ILE:950 R:A:LEU:951 R:A:SER:952 R:A:VAL:953 R:A:GLN:954
+R:A:ALA:955 R:A:GLU:956 R:A:GLU:957 R:A:GLN:958 R:A:LYS:959 R:A:LEU:960 R:A:ILE:961 R:A:SER:962 R:A:GLU:963 R:A:GLU:964
+R:A:ASP:965 R:A:LEU:966 R:A:LEU:967 R:A:ARG:968 R:A:LYS:969 R:A:ARG:970 R:A:ARG:971 R:A:GLU:972 R:A:LEU:974 R:A:LYS:975
+R:A:LYS:977 R:A:LEU:978 R:A:LEU:981 R:A:GLY:982 R:A:GLY:983 R:A:CYS:984 L:B:ASP:202 L:B:GLU:211 L:B:HSD:217 L:B:ILE:218
+L:B:ASP:220 L:B:SER:221 L:B:PHE:222 L:B:HSD:223 L:B:SER:224 L:B:LEU:225 L:B:SER:228 L:B:VAL:229 L:B:PRO:230 L:B:SER:238
+L:B:ARG:239 L:B:ALA:240 L:B:GLN:241 L:B:ILE:242 L:B:LEU:243 L:B:ASP:244 L:B:ALA:246 L:B:THR:247 L:B:GLU:248 L:B:TYR:249
+L:B:ILE:250 L:B:GLN:251 L:B:TYR:252 L:B:MET:253 L:B:ARG:254 L:B:LYS:256 L:B:ASN:257 L:B:HSD:258 L:B:THR:259 L:B:HSD:260
+L:B:GLN:261 L:B:ASP:263 L:B:ILE:264 L:B:ASP:265 L:B:ASP:266 L:B:LEU:267 L:B:LYS:268 L:B:ARG:269 L:B:GLN:270 L:B:ASN:271
+L:B:ALA:272 L:B:LEU:273 L:B:LEU:274 L:B:GLU:275 L:B:GLN:276 L:B:GLN:277 L:B:VAL:278 L:B:ARG:279 L:B:LEU:281 L:B:GLY:282
+L:B:GLY:283 L:B:CYS:284
+
+[INFO   ] Cleaning normal complex trajectories...
+[INFO   ] Building AMBER topologies from GROMACS files... Done.
+
+[INFO   ] Loading and checking parameter files for compatibility...
+[INFO   ] Preparing trajectories for simulation...
+
+[INFO   ] 241 frames were processed by cpptraj for use in calculation.
+[INFO   ] Starting calculations in 8 CPUs...
+[INFO   ] Running calculations on normal system...
+[INFO   ] Beginning GB calculations with /home/marcel/miniconda3/envs/gromacs/bin/sander
+[INFO   ]   calculating complex contribution...
+
+              0%|          | 0/241 [elapsed: 00:00 remaining: ?]
+              3%|3         | 8/241 [elapsed: 00:06 remaining: 02:55]
+              7%|6         | 16/241 [elapsed: 00:09 remaining: 01:59]
+             10%|9         | 24/241 [elapsed: 00:12 remaining: 01:39]
+             13%|#3        | 32/241 [elapsed: 00:15 remaining: 01:29]
+             17%|#6        | 40/241 [elapsed: 00:18 remaining: 01:22]
+             20%|#9        | 48/241 [elapsed: 00:21 remaining: 01:16]
+             23%|##3       | 56/241 [elapsed: 00:24 remaining: 01:12]
+             27%|##6       | 64/241 [elapsed: 00:27 remaining: 01:08]
+             29%|##9       | 70/241 [elapsed: 00:30 remaining: 01:10]
+             32%|###1      | 77/241 [elapsed: 00:33 remaining: 01:08]
+             34%|###3      | 81/241 [elapsed: 00:36 remaining: 01:17]
+             37%|###6      | 88/241 [elapsed: 00:39 remaining: 01:11]
+             40%|###9      | 96/241 [elapsed: 00:42 remaining: 01:03]
+             43%|####3     | 104/241 [elapsed: 00:45 remaining: 00:56]
+             46%|####6     | 112/241 [elapsed: 00:48 remaining: 00:51]
+             50%|####9     | 120/241 [elapsed: 00:51 remaining: 00:47]
+             53%|#####3    | 128/241 [elapsed: 00:54 remaining: 00:43]
+             56%|#####6    | 136/241 [elapsed: 00:57 remaining: 00:40]
+             60%|#####9    | 144/241 [elapsed: 01:00 remaining: 00:37]
+             62%|######2   | 150/241 [elapsed: 01:03 remaining: 00:37]
+             66%|######5   | 158/241 [elapsed: 01:06 remaining: 00:33]
+             68%|######8   | 165/241 [elapsed: 01:09 remaining: 00:31]
+             71%|#######   | 171/241 [elapsed: 01:12 remaining: 00:30]
+             74%|#######3  | 178/241 [elapsed: 01:15 remaining: 00:27]
+             77%|#######6  | 185/241 [elapsed: 01:18 remaining: 00:24]
+             80%|#######9  | 192/241 [elapsed: 01:21 remaining: 00:21]
+             83%|########2 | 200/241 [elapsed: 01:24 remaining: 00:16]
+             86%|########6 | 208/241 [elapsed: 01:27 remaining: 00:13]
+             90%|########9 | 216/241 [elapsed: 01:30 remaining: 00:09]
+             93%|#########2| 224/241 [elapsed: 01:33 remaining: 00:06]
+             96%|#########5| 231/241 [elapsed: 01:36 remaining: 00:04]
+             98%|#########8| 237/241 [elapsed: 01:39 remaining: 00:01]
+            100%|##########| 241/241 [elapsed: 01:42 remaining: 00:00]
+                                                                      
+
+            100%|##########| 241/241 [elapsed: 01:42 remaining: 00:00]
+[INFO   ]   calculating receptor contribution...
+
+              0%|          | 0/241 [elapsed: 00:00 remaining: ?]
+              7%|7         | 18/241 [elapsed: 00:01 remaining: 00:12]
+             10%|9         | 23/241 [elapsed: 00:02 remaining: 00:21]
+             12%|#2        | 29/241 [elapsed: 00:03 remaining: 00:25]
+             14%|#4        | 34/241 [elapsed: 00:04 remaining: 00:29]
+             16%|#6        | 39/241 [elapsed: 00:05 remaining: 00:32]
+             19%|#8        | 45/241 [elapsed: 00:06 remaining: 00:31]
+             21%|##        | 50/241 [elapsed: 00:07 remaining: 00:33]
+             23%|##2       | 55/241 [elapsed: 00:08 remaining: 00:33]
+             25%|##5       | 61/241 [elapsed: 00:09 remaining: 00:31]
+             27%|##7       | 66/241 [elapsed: 00:10 remaining: 00:32]
+             29%|##9       | 70/241 [elapsed: 00:11 remaining: 00:34]
+             32%|###1      | 77/241 [elapsed: 00:12 remaining: 00:29]
+             34%|###4      | 82/241 [elapsed: 00:13 remaining: 00:29]
+             36%|###6      | 87/241 [elapsed: 00:14 remaining: 00:29]
+             39%|###8      | 93/241 [elapsed: 00:15 remaining: 00:26]
+             41%|####      | 98/241 [elapsed: 00:16 remaining: 00:26]
+             43%|####2     | 103/241 [elapsed: 00:17 remaining: 00:26]
+             45%|####5     | 109/241 [elapsed: 00:18 remaining: 00:24]
+             48%|####7     | 115/241 [elapsed: 00:19 remaining: 00:22]
+             49%|####9     | 119/241 [elapsed: 00:20 remaining: 00:23]
+             52%|#####1    | 125/241 [elapsed: 00:21 remaining: 00:21]
+             54%|#####4    | 131/241 [elapsed: 00:22 remaining: 00:19]
+             56%|#####6    | 135/241 [elapsed: 00:23 remaining: 00:20]
+             59%|#####8    | 141/241 [elapsed: 00:24 remaining: 00:18]
+             61%|######1   | 148/241 [elapsed: 00:25 remaining: 00:15]
+             63%|######3   | 152/241 [elapsed: 00:26 remaining: 00:16]
+             65%|######5   | 157/241 [elapsed: 00:27 remaining: 00:16]
+             68%|######8   | 164/241 [elapsed: 00:28 remaining: 00:13]
+             70%|######9   | 168/241 [elapsed: 00:29 remaining: 00:14]
+             72%|#######2  | 174/241 [elapsed: 00:30 remaining: 00:12]
+             75%|#######4  | 180/241 [elapsed: 00:31 remaining: 00:10]
+             77%|#######6  | 185/241 [elapsed: 00:32 remaining: 00:10]
+             79%|#######8  | 190/241 [elapsed: 00:33 remaining: 00:09]
+             81%|########1 | 196/241 [elapsed: 00:34 remaining: 00:08]
+             83%|########3 | 201/241 [elapsed: 00:35 remaining: 00:07]
+             85%|########5 | 206/241 [elapsed: 00:36 remaining: 00:06]
+             88%|########7 | 211/241 [elapsed: 00:37 remaining: 00:05]
+             90%|########9 | 216/241 [elapsed: 00:38 remaining: 00:04]
+             92%|#########1| 221/241 [elapsed: 00:39 remaining: 00:03]
+             93%|#########3| 225/241 [elapsed: 00:40 remaining: 00:03]
+             95%|#########5| 230/241 [elapsed: 00:41 remaining: 00:02]
+             97%|#########7| 234/241 [elapsed: 00:42 remaining: 00:01]
+             98%|#########7| 236/241 [elapsed: 00:43 remaining: 00:01]
+             98%|#########8| 237/241 [elapsed: 00:44 remaining: 00:01]
+             99%|#########9| 239/241 [elapsed: 00:45 remaining: 00:00]
+            100%|#########9| 240/241 [elapsed: 00:46 remaining: 00:00]
+            100%|##########| 241/241 [elapsed: 00:47 remaining: 00:00]
+                                                                      
+
+            100%|##########| 241/241 [elapsed: 00:47 remaining: 00:00]
+[INFO   ]   calculating ligand contribution...
+
+              0%|          | 0/241 [elapsed: 00:00 remaining: ?]
+             14%|#3        | 33/241 [elapsed: 00:01 remaining: 00:06]
+             16%|#6        | 39/241 [elapsed: 00:02 remaining: 00:11]
+             18%|#8        | 44/241 [elapsed: 00:03 remaining: 00:17]
+             21%|##        | 50/241 [elapsed: 00:04 remaining: 00:20]
+             24%|##3       | 57/241 [elapsed: 00:05 remaining: 00:21]
+             26%|##6       | 63/241 [elapsed: 00:06 remaining: 00:23]
+             28%|##8       | 68/241 [elapsed: 00:07 remaining: 00:25]
+             31%|###       | 74/241 [elapsed: 00:08 remaining: 00:25]
+             34%|###3      | 81/241 [elapsed: 00:09 remaining: 00:24]
+             36%|###6      | 87/241 [elapsed: 00:10 remaining: 00:23]
+             38%|###8      | 92/241 [elapsed: 00:11 remaining: 00:24]
+             41%|####      | 98/241 [elapsed: 00:12 remaining: 00:23]
+             44%|####3     | 105/241 [elapsed: 00:13 remaining: 00:21]
+             46%|####6     | 111/241 [elapsed: 00:14 remaining: 00:21]
+             48%|####8     | 116/241 [elapsed: 00:15 remaining: 00:21]
+             51%|#####     | 122/241 [elapsed: 00:16 remaining: 00:20]
+             54%|#####3    | 129/241 [elapsed: 00:17 remaining: 00:18]
+             56%|#####6    | 135/241 [elapsed: 00:18 remaining: 00:17]
+             58%|#####8    | 140/241 [elapsed: 00:19 remaining: 00:17]
+             61%|######    | 146/241 [elapsed: 00:20 remaining: 00:16]
+             63%|######3   | 153/241 [elapsed: 00:21 remaining: 00:14]
+             66%|######6   | 160/241 [elapsed: 00:22 remaining: 00:12]
+             68%|######8   | 164/241 [elapsed: 00:23 remaining: 00:13]
+             71%|#######   | 170/241 [elapsed: 00:24 remaining: 00:12]
+             73%|#######3  | 177/241 [elapsed: 00:25 remaining: 00:10]
+             76%|#######6  | 184/241 [elapsed: 00:26 remaining: 00:08]
+             78%|#######8  | 189/241 [elapsed: 00:27 remaining: 00:08]
+             80%|########  | 194/241 [elapsed: 00:28 remaining: 00:08]
+             83%|########2 | 200/241 [elapsed: 00:29 remaining: 00:07]
+             85%|########5 | 206/241 [elapsed: 00:30 remaining: 00:06]
+             87%|########7 | 210/241 [elapsed: 00:31 remaining: 00:05]
+             89%|########9 | 215/241 [elapsed: 00:32 remaining: 00:05]
+             92%|#########1| 221/241 [elapsed: 00:33 remaining: 00:03]
+             94%|#########3| 226/241 [elapsed: 00:34 remaining: 00:02]
+             95%|#########5| 230/241 [elapsed: 00:35 remaining: 00:02]
+             97%|#########6| 233/241 [elapsed: 00:36 remaining: 00:01]
+             97%|#########7| 234/241 [elapsed: 00:37 remaining: 00:02]
+             98%|#########7| 236/241 [elapsed: 00:38 remaining: 00:01]
+             99%|#########8| 238/241 [elapsed: 00:39 remaining: 00:01]
+             99%|#########9| 239/241 [elapsed: 00:40 remaining: 00:00]
+            100%|#########9| 240/241 [elapsed: 00:41 remaining: 00:00]
+            100%|##########| 241/241 [elapsed: 00:42 remaining: 00:00]
+                                                                      
+
+            100%|##########| 241/241 [elapsed: 00:42 remaining: 00:00]
+[INFO   ] Parsing results to output files...
+
+[INFO   ] Timing:
+[INFO   ] Total GROMACS setup time:                   0.149 min.
+[INFO   ] Total AMBER setup time:                     0.009 min.
+[INFO   ] Creating trajectories with cpptraj:         0.015 min.
+[INFO   ] Total calculation time:                     3.225 min.
+[INFO   ] Total GB calculation time:                  3.200 min.
+[INFO   ] Statistics calculation & output writing:    0.056 min.
+[INFO   ] Total time taken:                           3.461 min.
+
+[INFO   ] 
+   Finalizing gmx_MMPBSA: [ERROR  ] = 0; [WARNING] = 0
+   Check the gmx_MMPBSA.log file for more details...
+
+[INFO   ] 
+ Thank you for using gmx_MMPBSA. Please consider supporting gmx_MMPBSA by citing our publication:
+    Valdés-Tresanco, M.S., Valdés-Tresanco, M.E., Valiente, P.A. and Moreno E. 
+    gmx_MMPBSA: A New Tool to Perform End-State Free Energy Calculations with GROMACS. 
+    J Chem Theory Comput., 2021, 17 (10):6281-6291. Epub 2021 Sep 29. PMID: 34586825.
+    https://pubs.acs.org/doi/10.1021/acs.jctc.1c00645
+
+Also consider citing MMPBSA.py:
+    Miller III, B. R., McGee Jr., T. D., Swails, J. M. Homeyer, N. Gohlke, H. and Roitberg, A. E.
+    MMPBSA.py: An Efficient Program for End-State Free Energy Calculations.
+    J. Chem. Theory Comput., 2012, 8 (9) pp 3314-3321
+
+[INFO   ] Opening gmx_MMPBSA_ana to analyze results...
+
+[INFO   ] Finalized...

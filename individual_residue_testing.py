@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-residue_dynamics_vs_pocket.py
+Residue Dynamics vs Pocket Envelope
+===================================
+Analyzes the distance between a specific residue and a pocket's spatial 
+envelope across the MD trajectory.
 
-Answers the question the earlier static checks could NOT answer: across the
-real trajectory (not just one reference structure), how often does a given
-residue actually come close to / enter a pocket's spatial envelope?
-
+Reports the fraction of frames in which the residue is within a specified
+distance of the pocket.
 """
 
 import numpy as np

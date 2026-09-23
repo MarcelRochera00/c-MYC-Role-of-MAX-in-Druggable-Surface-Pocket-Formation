@@ -376,7 +376,7 @@ plt.savefig(
 plt.close()
 
 # =============================================================================
-# STATISTICS — SD entre réplicas (reproducibilidad), no entre frames
+# STATISTICS — SD across replicas (reproducibility), not across frames
 # =============================================================================
 
 with open(f"{OUT}/analysis_statistics.txt", "w") as f:
@@ -384,7 +384,7 @@ with open(f"{OUT}/analysis_statistics.txt", "w") as f:
     f.write("MYC THREE-REPLICA ANALYSIS\n")
     f.write("=" * 60 + "\n\n")
 
-    # --- Por réplica: mean ± SD sobre los frames de esa réplica ---
+    # --- Per replica: mean ± SD across frames of that replica ---
     for i in range(len(TRAJS)):
 
         f.write(f"Replica {i+1}\n")
@@ -404,9 +404,9 @@ with open(f"{OUT}/analysis_statistics.txt", "w") as f:
 
         f.write("\n")
 
-    # --- Global: mean ± SD entre réplicas (reproducibilidad) ---
-    # Se calcula la media de cada réplica y luego SD sobre esas 3 medias.
-    # Esto es lo comparable con el script MYC_(MYC:MAX)_analysis.py.
+    # --- Global: mean ± SD across replicas (reproducibility) ---
+    # The mean of each replica is calculated, followed by the SD of those 3 means.
+    # This allows direct comparison with the comparative analysis script.
     f.write("=" * 60 + "\n")
     f.write("Global statistics (mean ± SD across replicas, ddof=1)\n")
     f.write("-" * 60 + "\n")

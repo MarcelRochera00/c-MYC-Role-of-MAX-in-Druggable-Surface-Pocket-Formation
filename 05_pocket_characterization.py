@@ -1,39 +1,18 @@
 #!/usr/bin/env python3
 """
-individual_pocket_analysis.py
+Pocket Characterization (Step 4.1 in Workflow)
+==============================================
+Batch analysis pipeline for MDpocket's per-frame descriptor output.
+Processes every sub-pocket (SP1, SP2, ...) found under ROOT_DIR.
 
-Batch analysis pipeline for mdpocket's per-frame descriptor output, across
-every sub-pocket produced by an mdpocket run (SP1, SP2, ... SPn).
+For each pocket, this script:
+  1. Parses the descriptor file (e.g. SP1_descriptors.txt).
+  2. Adds a time_ns column based on snapshot index.
+  3. Generates per-pocket statistics (mean, min, max, std).
+  4. Plots MDpocket descriptors over the trajectory.
 
-For each pocket folder found under ROOT_DIR (e.g. Results/Pockets/SP1,
-Results/Pockets/SP2, ...), this script:
-  1. Finds and parses that pocket's descriptor file, named
-     "<pocket_name>_descriptors.txt" (e.g. SP1_descriptors.txt inside the
-     SP1 folder) - not a bare "_descriptors.txt", since mdpocket writes
-     every per-pocket file with the pocket name as a prefix and several
-     of these prefixed files (descriptors, atoms, info, ...) commonly sit
-     side by side in the same folder.
-     (parsing preserves the original manual, nothing-silently-dropped
-     logic: malformed lines are reported and skipped, short "pocket not
-     detected" rows are kept with pock_volume forced to 0).
-  2. Adds a time_ns column (time_ns = snapshot * TIME_PER_SNAPSHOT_NS).
-  3. Writes that pocket's clean descriptors.csv, summary_statistics.csv,
-     and a 4-panel time-series figure into its own output subfolder.
-
-Across all pockets, it then:
-  4. Writes one combined pocket_summary_statistics.csv (long format: one
-     row per pocket x descriptor, with mean/median/std/min/max/CV).
-  5. Writes one combined 2x3-grid figure per descriptor (SP1 ... SPn),
-     with identical x/y limits across panels so pockets are visually
-     comparable, at publication-quality (600 DPI).
-  6. Writes one PNG "quick-look" table (4.6_pocket_means_table.png) with
-     the mean of the 4 plotted descriptors for every pocket, formatted as
-     a readable table image (colored header, striped rows) for fast
-     visual reference alongside the CSVs.
-
-Just set ROOT_DIR (and TIME_PER_SNAPSHOT_NS, if different) below and run:
-    python individual_pocket_analysis.py
-
+After parsing all pockets, it aggregates results and generates summary
+figures, tables, and statistics.
 """
 
 from __future__ import annotations

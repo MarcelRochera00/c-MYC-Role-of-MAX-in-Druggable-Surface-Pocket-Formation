@@ -3,8 +3,10 @@
 # Folders
 MYC/
 MYC-MAX/
+
 # Generated pocket results
 Results/Pockets/**/*.pdb
+
 .gmx_mmpbsa_temp/
 .vscode/
 deprecated/

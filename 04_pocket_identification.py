@@ -1,21 +1,16 @@
 #!/usr/bin/env python3
 """
-extract_subpockets.py
 
-Takes the SINGLE frequency grid produced by running mdpocket once on your
-concatenated, common-reference-aligned trajectory (mdpout_freq_grid.dx) and:
-  1. thresholds it at ISOVALUE
-  2. splits it into distinct spatial sub-pockets (connected voxel blobs)
-  3. finds which residues line each sub-pocket
-  4. writes a summary CSV, a residues CSV, and a PyMOL script to view them
+Pocket Identification (Step 4.1 in Workflow) - ChimeraX version
+=================================================================
+Processes the frequency grid produced by MDpocket on the concatenated trajectory:
+  1. Thresholds grid at ISOVALUE.
+  2. Identifies distinct spatial sub-pockets (connected voxel blobs).
+  3. Identifies lining residues for each sub-pocket.
+  4. Outputs summary tables, residue lists, and a ChimeraX visualization script
+     (.cxc) that also renders a high-resolution image.
 
-This is deliberately much simpler than the old per-replica consensus script:
-because all 3 replicas were combined into ONE trajectory before mdpocket
-ran, there's only one grid here. No cross-replica blob matching, no
-alignment step (that already happened upstream, before mdpocket ran) - just
-threshold -> label -> assign residues.
-
-Requires: numpy, scipy, gridData (pip install gridData), MDAnalysis, matplotlib
+Requires: numpy, scipy, gridData, MDAnalysis, matplotlib
 """
 
 import csv
@@ -35,32 +30,39 @@ DENS_DX = "MYC-MAX/mdpout_dens_grid.dx"
 # to mdpocket with -f (e.g. MYC-MAX-500's crystal_proteins.pdb).
 STRUCTURE_PDB = "MYC-MAX/MYC-MAX-500/charmm-gui/gromacs/crystal_proteins.pdb"
 
-ISOVALUE = 0.5        # pick from what you saw in PyMOL / your earlier isovalue scan
+ISOVALUE = 0.5        # pick from what you saw in ChimeraX / your earlier isovalue scan
 MIN_VOXELS = 5        # ignore tiny/spurious sub-pockets below this voxel count
 RESIDUE_CUTOFF = 5.0  # Angstrom: max residue-CA-to-nearest-pocket-voxel distance to call it "lining" the pocket
 
 OUTPUT_DIR = "Results/Pockets"
-SUMMARY_SUBDIR = "summary"                  # subpockets_summary.csv, residues.csv, report.txt, subpockets.pml go here
+SUMMARY_SUBDIR = "summary"                  # subpockets_summary.csv, residues.csv, report.txt, subpockets.cxc go here
 DEFINITIONS_SUBDIR = "pocket_definitions"   # SP{n}_pocket_grid.pdb (round-2 input) go here
-# each SP gets its own subfolder directly under OUTPUT_DIR (e.g. Results/Pockets/SP1/)
-# for its round-2 mdpocket output files (descriptors.txt, freq_grid.dx, etc.) - keeps
-# 6 pockets' worth of mdpocket output files from piling up in one flat folder
+# Each SP receives its own subdirectory to store MDpocket outputs.
 
 OUT_SUMMARY_CSV = "subpockets_core_summary.csv"
 OUT_RESIDUES_CSV = "subpockets_core_residues.csv"
-OUT_PML = "subpockets.pml"
+OUT_CXC = "subpockets.cxc"
 OUT_LEGEND_PNG = "subpockets_legend.png"
+OUT_RENDER_PNG = "subpockets_render.png"   # high-res image saved by the .cxc script itself
 OUT_REPORT_TXT = "subpockets_core_report.txt"
 SP_NAME_PREFIX = "SP"   # SP1, SP2, ... named by rank (largest volume first)
 TOP_N_FOR_PML = 6
 WANTED_POCKET_SUFFIX = "_pocket_grid.pdb"  # SP1_pocket_grid.pdb ... for mdpocket round-2 --selected_pocket input
 
-# --- Color scheme for the PyMOL scene ---
-# Chains: warm vs. cool so the two main chains are easy to tell apart at a
-# glance, not just two shades of gray.
-CHAIN_PALETTE = ["salmon", "palecyan", "wheat", "palegreen"]
-# Pockets: plain, standard, high-saturation colors.
+# --- ChimeraX Scene Color Scheme ---
+# Distinct colors to visually differentiate the main chains.
+# (used only to color the cartoon in the .cxc script - chains are no longer
+#  put in the legend image; identify them on-structure via the chain labels
+#  the script itself places, or your own labels in ChimeraX.)
+CHAIN_PALETTE = ["salmon", "paleturquoise", "wheat", "palegreen"]
+# Pockets: plain, standard, high-saturation colors - kept distinct from the
+# pale chain colors above so pockets pop out clearly.
 POCKET_PALETTE = ["red", "green", "blue", "yellow", "magenta", "cyan"]
+
+# --- Rendering / image quality ---
+IMAGE_WIDTH = 3000
+IMAGE_HEIGHT = 2400
+IMAGE_SUPERSAMPLE = 3          # anti-aliasing factor for the saved PNG
 # ===========================================================================
 
 
@@ -96,18 +98,13 @@ def find_subpockets(grid_obj, isovalue, min_voxels):
 
 
 def add_density_info(pockets, dens_dx_path):
-    """Sample mdpocket's alpha-sphere density grid (mdpout_dens_grid.dx) at
-    the exact same voxel indices as each sub-pocket's frequency blob.
-    Density is a separate descriptor from frequency: frequency says "how
-    often is this point part of a pocket", density says "how many alpha
-    spheres (packing/cavity depth) are found there" - a shallow, rarely-open
-    pocket and a deep, often-open one can have similar frequency but very
-    different density, so this is worth reporting alongside frequency
-    rather than assuming they track each other.
+    """
+    Sample MDpocket's alpha-sphere density grid (mdpout_dens_grid.dx) at
+    the voxel indices corresponding to each sub-pocket's frequency blob.
+    Density provides complementary information to frequency, describing cavity
+    depth and packing.
 
-    Silently skips this enrichment (with a warning) if the density grid
-    isn't found or its shape doesn't match the frequency grid - it's a
-    bonus descriptor, not something that should crash the whole extraction.
+    Skips this step if the density grid is not found or dimensions mismatch.
     """
     try:
         dens_obj = Grid(dens_dx_path)
@@ -139,18 +136,26 @@ def add_density_info(pockets, dens_dx_path):
 
 def get_structure_chains(structure_pdb):
     """Unique chain identifiers in the reference structure, in a stable
-    order, used to color each chain distinctly in the PyMOL scene."""
+    order, used to color each chain distinctly in the ChimeraX scene, plus
+    each chain's CA centroid (used to place an on-structure chain label)."""
     u = mda.Universe(structure_pdb)
     ca = u.select_atoms("name CA")
     try:
-        chains = ca.chainIDs
+        chain_ids = ca.chainIDs
     except (AttributeError, mda.exceptions.NoDataError):
-        chains = ca.segids  # fallback if no chain ID field in this PDB
+        chain_ids = ca.segids  # fallback if no chain ID field in this PDB
+
     seen = []
-    for c in chains:
+    for c in chain_ids:
         if c not in seen:
             seen.append(c)
-    return seen
+
+    centroids = {}
+    for c in seen:
+        mask = chain_ids == c
+        centroids[c] = ca.positions[mask].mean(axis=0)
+
+    return seen, centroids
 
 
 def assign_residues(pockets, structure_pdb, cutoff):
@@ -178,7 +183,20 @@ def assign_residues(pockets, structure_pdb, cutoff):
     return pockets
 
 
-def write_outputs(pockets, chains):
+def _chimerax_residue_spec(model_id, residues):
+    """Build a ChimeraX atom-spec selecting the given residues, grouped by
+    chain: '#1/A:12,34,56 #1/B:78,90'."""
+    by_chain = {}
+    for r in residues:
+        by_chain.setdefault(r["chain"], []).append(r["resnum"])
+    parts = []
+    for chain, resnums in by_chain.items():
+        resnum_list = ",".join(str(n) for n in sorted(set(resnums)))
+        parts.append(f"#{model_id}/{chain}:{resnum_list}")
+    return " ".join(parts)
+
+
+def write_outputs(pockets, chains, chain_centroids):
     summary_dir = os.path.join(OUTPUT_DIR, SUMMARY_SUBDIR)
     os.makedirs(summary_dir, exist_ok=True)
 
@@ -210,48 +228,65 @@ def write_outputs(pockets, chains):
                 w.writerow([f"{SP_NAME_PREFIX}{rank}", p["id"], rank, r["chain"], r["resnum"],
                             r["resname"], round(r["dist_to_pocket"], 2)])
 
-    # ---- PyMOL script ----
+    # ---- ChimeraX script ----
     chain_color_map = {ch: CHAIN_PALETTE[i % len(CHAIN_PALETTE)] for i, ch in enumerate(chains)}
     pocket_color_map = {}
-    with open(out(OUT_PML), "w") as f:
-        f.write(f"load {STRUCTURE_PDB}, struct\n")
-        f.write("hide everything, struct\nshow cartoon, struct\n")
-        f.write("bg_color white\nset ray_shadows, 0\n")
+    STRUCT_MODEL = 1          # model id assigned to the structure by "open"
+    marker_model_id = 2       # markers (labels) each get their own model id, starting after the structure
+
+    with open(out(OUT_CXC), "w") as f:
+        f.write(f"# Auto-generated ChimeraX script - open with:\n")
+        f.write(f"#   chimerax --script {OUT_CXC}\n")
+        f.write(f"# or drag-and-drop this file onto a running ChimeraX window.\n\n")
+        f.write(f"open {STRUCTURE_PDB}\n")
+        f.write(f"style #{STRUCT_MODEL} stick\n")
+        f.write("set bgColor white\n")
+
         f.write("\n# --- Chains: warm vs. cool colors so the two main chains are easy to tell apart ---\n")
         for ch, color in chain_color_map.items():
-            f.write(f"color {color}, struct and chain {ch}\n")
-        f.write("set cartoon_transparency, 0.5, struct\n")
+            f.write(f"color #{STRUCT_MODEL}/{ch} {color}\n")
+
+        f.write("\n# --- Chain labels placed directly on the structure (no legend entry needed) ---\n")
+        for ch, color in chain_color_map.items():
+            cx, cy, cz = chain_centroids[ch]
+            f.write(f"marker #{marker_model_id} position {cx:.2f},{cy:.2f},{cz:.2f} "
+                    f"radius 0.01 color {color}\n")
+            f.write(f"label #{marker_model_id} text \"Chain {ch}\" height 2.0 color black\n")
+            marker_model_id += 1
 
         f.write(f"\n# --- Sub-pockets (top {TOP_N_FOR_PML} by volume), shown as colored sticks. "
-                f"See {OUT_LEGEND_PNG} for the key, or just read the on-screen labels below. ---\n")
+                f"See {OUT_LEGEND_PNG} for the pocket color key. ---\n")
         for rank, p in enumerate(pockets[:TOP_N_FOR_PML], 1):
             if not p["residues"]:
                 continue
             sp_name = f"{SP_NAME_PREFIX}{rank}"
-            sel = " or ".join(f"(chain {r['chain']} and resi {r['resnum']})" for r in p["residues"])
             color = POCKET_PALETTE[(rank - 1) % len(POCKET_PALETTE)]
             pocket_color_map[sp_name] = color
+            sel_spec = _chimerax_residue_spec(STRUCT_MODEL, p["residues"])
             cx, cy, cz = p["centroid"]
+
             f.write(f"\n# {sp_name} (pocket {p['id']}, {p['volume_A3']:.0f} A^3, "
                     f"mean freq {p['mean_freq']:.2f}, {len(p['residues'])} residues)\n")
-            f.write(f"select {sp_name.lower()}_residues, {sel}\n")
-            f.write(f"color {color}, {sp_name.lower()}_residues\n")
-            f.write(f"show sticks, {sp_name.lower()}_residues and not name C+N+O\n")
-            # a free-floating pseudoatom at the pocket centroid, labeled with
-            # its SP name, so the identity is readable straight off the
-            # structure without cross-referencing the legend image
-            f.write(f"pseudoatom {sp_name.lower()}_label_anchor, pos=[{cx:.2f}, {cy:.2f}, {cz:.2f}]\n")
-            f.write(f"label {sp_name.lower()}_label_anchor, \"{sp_name}\"\n")
-            f.write(f"color {color}, {sp_name.lower()}_label_anchor\n")
+            f.write(f"select {sel_spec}\n")
+            f.write(f"color sel {color}\n")
+            f.write(f"show sel atoms\n")
+            f.write(f"style sel stick\n")
+            f.write("~select\n")
+            # a free-floating marker at the pocket centroid, labeled with its
+            # SP name, so the identity is readable straight off the structure
+            f.write(f"marker #{marker_model_id} position {cx:.2f},{cy:.2f},{cz:.2f} "
+                    f"radius 0.01 color {color}\n")
+            f.write(f"label #{marker_model_id} text \"{sp_name}\" height 2.2 color {color}\n")
+            marker_model_id += 1
 
-        f.write("\nset label_size, 20\nset label_color, black\n"
-                "set label_outline_color, white\nset label_font_id, 7\n")
-        f.write("hide everything, *_label_anchor\nshow labels, *_label_anchor\n")
-        f.write("zoom struct\n")
-        f.write(f"\n# See {OUT_LEGEND_PNG} alongside this render for the chain + pocket color key\n"
-                "# (PyMOL doesn't render a legend into the 3D scene itself).\n")
+        f.write("\nview\n")
+        f.write(f"\n# High-resolution render (adjust width/height/supersample as needed)\n")
+        f.write(f"save {OUT_RENDER_PNG} width {IMAGE_WIDTH} height {IMAGE_HEIGHT} "
+                f"supersample {IMAGE_SUPERSAMPLE} transparentBackground false\n")
+        f.write(f"\n# See {OUT_LEGEND_PNG} alongside this render for the pocket color key\n"
+                "# (chain identity is already labeled directly on the structure above).\n")
 
-    write_legend(chain_color_map, pocket_color_map, out(OUT_LEGEND_PNG))
+    write_legend(pocket_color_map, out(OUT_LEGEND_PNG))
 
     # ---- human-readable report: SP name, residues by chain, all descriptors ----
     with open(out(OUT_REPORT_TXT), "w") as f:
@@ -294,59 +329,32 @@ def write_outputs(pockets, chains):
             f.write("\n")
 
 
-_PYMOL_ONLY_COLORS = {
-    "palecyan": "#AAFFFF",  # PyMOL's palecyan isn't a matplotlib/CSS4 name
-}
-
-
-def _mpl_color(pymol_color_name):
-    """Most PyMOL color names (e.g. 'wheat', 'palegreen', 'salmon') are also
-    valid matplotlib names, but a few (like PyMOL's grayNN/greyNN shades, or
-    palecyan) aren't - convert those to a matplotlib-compatible equivalent."""
-    name = pymol_color_name.lower()
-    if name in _PYMOL_ONLY_COLORS:
-        return _PYMOL_ONLY_COLORS[name]
-    if name.startswith("gray") or name.startswith("grey"):
-        digits = name[4:]
-        if digits.isdigit():
-            return str(int(digits) / 100)
-    return pymol_color_name
-
-
-def write_legend(chain_color_map, pocket_color_map, output_path):
-    """Standalone color-key image pairing chains and pockets to the colors
-    used in subpockets.pml, since PyMOL itself has no built-in legend panel
-    for a 3D scene."""
-    n_entries = len(chain_color_map) + len(pocket_color_map)
+def write_legend(pocket_color_map, output_path):
+    """Standalone color-key image for the sub-pockets only. Chains are no
+    longer included here - they're identified with labels directly on the
+    structure by the .cxc script instead."""
+    n_entries = len(pocket_color_map)
     fig, ax = plt.subplots(figsize=(3.5, 1.0 + 0.35 * (n_entries + 2)))
     ax.axis("off")
 
-    elements = []
-    for ch, color in chain_color_map.items():
-        elements.append(mpatches.Patch(facecolor=_mpl_color(color), edgecolor="black", label=f"Chain {ch}"))
-    for sp_name, color in pocket_color_map.items():
-        elements.append(mpatches.Patch(facecolor=_mpl_color(color), edgecolor="black", label=sp_name))
+    elements = [mpatches.Patch(facecolor=color, edgecolor="black", label=sp_name)
+                for sp_name, color in pocket_color_map.items()]
 
     ax.legend(handles=elements, loc="center", frameon=True, fontsize=10,
-              title="Structure color key", title_fontsize=11)
+              title="Sub-pocket color key", title_fontsize=11)
     fig.savefig(output_path, dpi=200, bbox_inches="tight")
     plt.close(fig)
 
 
 def write_wanted_pocket_pdbs(pockets):
-    """Write one dummy-atom PDB per sub-pocket, at its voxel grid positions,
-    into OUTPUT_DIR/pocket_definitions/. This is the 'selected zone' file
-    format mdpocket's round-2 mode needs (fed via --selected_pocket) to
-    track that specific pocket's descriptors (volume, hydrophobicity,
-    polarity, charge, ...) per snapshot across the whole trajectory -
-    MDpocket doesn't detect/track pocket identity across frames on its own,
-    so this file is what tells it which zone to measure.
+    """
+    Write a dummy-atom PDB for each sub-pocket representing its voxel grid.
+    This generates the 'selected zone' files required for MDpocket's round-2
+    characterization (--selected_pocket), enabling tracking of specific pocket
+    descriptors (volume, hydrophobicity, polarity) across the trajectory.
 
-    Also pre-creates OUTPUT_DIR/SP{n}/ for each pocket - that's where you
-    should point mdpocket's -o for that pocket's round-2 run, so each
-    pocket's own set of output files (descriptors.txt, freq_grid.dx, etc.)
-    lands in its own folder instead of all 6 pockets' files mixing together
-    in one flat directory.
+    Pre-creates subdirectories (e.g., Results/Pockets/SP1/) for organized
+    output storage of the round-2 descriptors.
     """
     definitions_dir = os.path.join(OUTPUT_DIR, DEFINITIONS_SUBDIR)
     os.makedirs(definitions_dir, exist_ok=True)
@@ -379,7 +387,7 @@ def main():
 
     pockets = add_density_info(pockets, DENS_DX)
     pockets = assign_residues(pockets, STRUCTURE_PDB, RESIDUE_CUTOFF)
-    chains = get_structure_chains(STRUCTURE_PDB)
+    chains, chain_centroids = get_structure_chains(STRUCTURE_PDB)
 
     print(f"\n{'name':>6s} {'volume(A3)':>11s} {'mean_freq':>10s} {'mean_dens':>10s} {'n_res':>6s} {'chains':>8s}")
     for rank, p in enumerate(pockets, 1):
@@ -388,14 +396,17 @@ def main():
         print(f"{SP_NAME_PREFIX}{rank:<5d} {p['volume_A3']:11.1f} {p['mean_freq']:10.2f} "
               f"{dens_str:>10s} {len(p['residues']):6d} {p_chains:>8s}")
 
-    write_outputs(pockets, chains)
+    write_outputs(pockets, chains, chain_centroids)
     wanted_paths = write_wanted_pocket_pdbs(pockets)
-    print(f"\nWrote {OUT_SUMMARY_CSV}, {OUT_RESIDUES_CSV}, {OUT_PML}, {OUT_LEGEND_PNG}, {OUT_REPORT_TXT} "
+    print(f"\nWrote {OUT_SUMMARY_CSV}, {OUT_RESIDUES_CSV}, {OUT_CXC}, {OUT_LEGEND_PNG}, {OUT_REPORT_TXT} "
           f"into {OUTPUT_DIR}/{SUMMARY_SUBDIR}/")
     print(f"Wrote {len(wanted_paths)} wanted-pocket PDBs into {OUTPUT_DIR}/{DEFINITIONS_SUBDIR}/:")
     for p in wanted_paths:
         print(f"  {p}")
     print(f"Pre-created {OUTPUT_DIR}/SP1/ ... {OUTPUT_DIR}/SP{len(pockets)}/ for round-2 outputs")
+    print(f"\nTo render: open ChimeraX and run 'open {OUTPUT_DIR}/{SUMMARY_SUBDIR}/{OUT_CXC}' "
+          f"(or 'chimerax --script ...' from the command line). This will also save a "
+          f"{IMAGE_WIDTH}x{IMAGE_HEIGHT} (supersample {IMAGE_SUPERSAMPLE}) render as {OUT_RENDER_PNG}.")
     print("\nRun mdpocket round 2 for each pocket, e.g. for SP1:")
     print(f"  mdpocket --trajectory_file traj_all_fit_v2.xtc --trajectory_format xtc \\\n"
           f"           -f {STRUCTURE_PDB} \\\n"

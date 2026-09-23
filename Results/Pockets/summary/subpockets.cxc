@@ -1,0 +1,63 @@
+# Auto-generated ChimeraX script - open with:
+#   chimerax --script subpockets.cxc
+# or drag-and-drop this file onto a running ChimeraX window.
+
+open /home/marcel/Desktop/Project1/MYC-MAX/MYC-MAX-500/charmm-gui/gromacs/crystal_proteins.pdb
+style #1 stick
+set bgColor white
+
+# --- Chains: warm vs. cool colors so the two main chains are easy to tell apart ---
+color #1/A salmon
+color #1/B paleturquoise
+
+# --- Sub-pockets (top 6 by volume), shown as colored sticks. See subpockets_legend.png for the pocket color key. ---
+
+# SP1 (pocket 5, 93 A^3, mean freq 0.61, 4 residues)
+select #1/B:230,245,248,249
+color sel red
+show sel atoms
+style sel stick
+~select
+
+# SP2 (pocket 6, 89 A^3, mean freq 0.62, 6 residues)
+select #1/B:238,239,240 #1/A:913,914,917
+color sel green
+show sel atoms
+style sel stick
+~select
+
+# SP3 (pocket 3, 45 A^3, mean freq 0.54, 5 residues)
+select #1/B:214,218 #1/A:938,939,940
+color sel blue
+show sel atoms
+style sel stick
+~select
+
+# SP4 (pocket 1, 26 A^3, mean freq 0.54, 3 residues)
+select #1/A:945,948,949
+color sel yellow
+show sel atoms
+style sel stick
+~select
+
+# SP5 (pocket 4, 21 A^3, mean freq 0.52, 2 residues)
+select #1/A:914,918
+color sel magenta
+show sel atoms
+style sel stick
+~select
+
+# SP6 (pocket 2, 18 A^3, mean freq 0.53, 3 residues)
+select #1/B:254,257,258
+color sel cyan
+show sel atoms
+style sel stick
+~select
+
+view
+
+# High-resolution render (adjust width/height/supersample as needed)
+save subpockets_render.png width 3000 height 2400 supersample 3 transparentBackground false
+
+# See subpockets_legend.png alongside this render for the pocket color key
+# (chain identity is already labeled directly on the structure above).

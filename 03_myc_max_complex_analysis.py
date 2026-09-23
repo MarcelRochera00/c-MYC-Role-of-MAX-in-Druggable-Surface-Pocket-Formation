@@ -249,20 +249,8 @@ if 1 in RUN:
         plt.close()
         print(f"  → Saved {OUT}/3.1_interface_contacts.png")
 
-        if all_contacts:
-            fig, ax = plt.subplots(figsize=(7, 4))
-            means = [c.mean() for c in all_contacts]
-            stds  = [c.std()  for c in all_contacts]
-            ax.bar([f"Rep {i+1}\n(eq {EQUIL[i]}ps)" for i in range(len(all_contacts))],
-                   means, yerr=stds, color=COLORS[:len(all_contacts)], edgecolor="k",
-                   linewidth=0.7, error_kw={"elinewidth": 1.5}, capsize=5)
-            ax.set_ylabel(f"Mean interface contacts (< {CONTACT_DIST} Å)", fontsize=11)
-            ax.set_title("Mean MYC-MAX Interface Contacts per Replica", fontsize=12, fontweight="bold")
-            ax.grid(axis="y", alpha=0.3)
-            plt.tight_layout()
-            plt.savefig(f"{OUT}/3.2_contacts_summary.png", dpi=150)
-            plt.close()
-            print(f"  → Saved {OUT}/3.2_contacts_summary.png")
+        # 3.2_contacts_summary.png generation removed per request.
+        # (Mean/std per replica is still printed above.)
     except Exception as e:
         print(f"  ✗ Contacts section failed: {e}")
 
@@ -413,33 +401,15 @@ dec_verbose=1,
         sys.stdout.flush()
 
     # -------------------------------------------------------------------------
-    # PLOT 1 — Overall ΔG binding per replica (bar chart)
+    # Overall ΔG binding per replica — 3.3_mmgbsa.png generation removed per
+    # request. Still report the overall mean/std to the console.
     # -------------------------------------------------------------------------
     if mmpbsa_results:
-        fig, ax = plt.subplots(figsize=(7, 5))
-        means = [r.mean() for r in mmpbsa_results]
-        stds  = [r.std()  for r in mmpbsa_results]
-        ax.bar([f"Rep {i+1}\n(eq {EQUIL[i]}ps)" for i in range(len(mmpbsa_results))],
-               means, yerr=stds, color=COLORS[:len(mmpbsa_results)],
-               edgecolor="k", linewidth=0.7, error_kw={"elinewidth": 1.5}, capsize=5)
-        ax.axhline(0, color="black", linewidth=0.8, linestyle="--")
-        # Shaded region showing expected PPI range
-        ax.axhspan(-50, -20, alpha=0.08, color="green", label="Expected PPI range (−20 to −50)")
-        ax.set_ylabel("ΔG binding — GB (kcal/mol)", fontsize=11)
-        ax.set_title("MM-GBSA Binding Free Energy — MYC-MAX\n"
-                     "(igb=2, idecomp=1, interval=50)", fontsize=12, fontweight="bold")
-        ax.legend(fontsize=8)
-        ax.grid(axis="y", alpha=0.3)
-        plt.tight_layout()
-        plt.savefig(f"{OUT}/3.3_mmgbsa.png", dpi=150)
-        plt.close()
-        print(f"\n  → Saved {OUT}/3.3_mmgbsa.png")
-
         overall_mean = np.mean([r.mean() for r in mmpbsa_results])
         overall_std  = np.std([r.mean()  for r in mmpbsa_results])
-        print(f"  Overall ΔG (GB): {overall_mean:.2f} ± {overall_std:.2f} kcal/mol")
+        print(f"\n  Overall ΔG (GB): {overall_mean:.2f} ± {overall_std:.2f} kcal/mol")
     else:
-        print("  ✗ No MM-GBSA results to plot")
+        print("  ✗ No MM-GBSA results")
 
     # -------------------------------------------------------------------------
     # PLOT 2 — Per-replica hotspot bar charts
@@ -508,9 +478,7 @@ dec_verbose=1,
             ax.set_yticklabels(labels_c, fontsize=8)
             ax.axvline(0, color="black", linewidth=0.8)
             ax.set_xlabel("Mean ΔG contribution (kcal/mol)", fontsize=11)
-            ax.set_title(f"Consensus MM-GBSA Hotspot Residues — All {len(decomp_results)} Replicas\n"
-                         f"Top {TOP_N_HOTSPOTS} — error bars = std across replicas",
-                         fontsize=12, fontweight="bold")
+            # Title removed per request.
             ax.legend(handles=[mpatches.Patch(color="#e74c3c", label="MYC (PROA)"),
                                 mpatches.Patch(color="#3498db", label="MAX (PROB)")], fontsize=9)
             ax.grid(axis="x", alpha=0.3)
@@ -654,14 +622,7 @@ if 3 in RUN:
     # ---- Save text summary ----
     sb_summary_path = f"{OUT}/3.0_salt_bridges_summary.txt"
     with open(sb_summary_path, "w") as f:
-        f.write("Inter-chain Salt Bridge Occupancy — MYC-MAX\n")
-        f.write(f"Distance cutoff: {SALT_DIST} Å | Occupancy threshold: {SALT_OCCUPANCY*100:.0f}%\n")
-        f.write(f"Replicas: {len(TRAJS)}\n")
-        f.write("="*70 + "\n\n")
-
-        f.write("=== CONSENSUS (present in ALL replicas) ===\n")
-        f.write(f"{'Bridge':<45} {'Direction':<12} {'Mean occ':>10} {'Std':>8}\n")
-        f.write("-"*70 + "\n")
+        
         for bridge, data in sorted(consensus_bridges.items(),
                                    key=lambda x: -np.mean(x[1]["occupancies"])):
             occs = data["occupancies"]
@@ -708,7 +669,8 @@ if 3 in RUN:
     print(f"  → Saved {csv_sb_path} (machine-readable)")
 
     def _plot_salt_bridges(bridges_dict, title, outpath, alpha=1.0):
-        """Helper to plot a salt bridge occupancy bar chart."""
+        """Helper to plot a salt bridge occupancy bar chart.
+        If title is falsy (empty string / None), no title is drawn."""
         if not bridges_dict:
             return
         sorted_b  = sorted(bridges_dict.items(),
@@ -732,7 +694,8 @@ if 3 in RUN:
         # Hard cap at 1.0 — occupancy is a fraction, never exceeds 1
         ax.set_xlim(0, 1.05)
         ax.axvline(SALT_OCCUPANCY, color="red", linestyle="--", linewidth=0.9)
-        ax.set_title(title, fontsize=12, fontweight="bold")
+        if title:
+            ax.set_title(title, fontsize=12, fontweight="bold")
         ax.legend(handles=[
             mpatches.Patch(color="#e67e22", label="MYC(+) → MAX(-)"),
             mpatches.Patch(color="#3498db", label="MAX(+) → MYC(-)"),
@@ -747,8 +710,7 @@ if 3 in RUN:
 
     _plot_salt_bridges(
         consensus_bridges,
-        title=(f"Consensus Inter-chain Salt Bridges — MYC-MAX\n"
-               f"(present in all {len(TRAJS)} replicas, cutoff {SALT_DIST} Å)"),
+        title="",  # Title removed per request.
         outpath=f"{OUT}/3.6_salt_bridges_consensus.png",
     )
     _plot_salt_bridges(
@@ -772,7 +734,7 @@ for f in sorted(os.listdir(OUT)):
     print(f"    {OUT}/{f}")
 print("="*60)
 print("\n  HOTSPOT CROSS-REFERENCE WORKFLOW:")
-print("  1. Open 4.0_hotspots_summary.txt  → MM-GBSA energy hotspots")
+print("  1. Open 3.0_hotspots_summary.txt  → MM-GBSA energy hotspots")
 print("  2. Open 3.0_salt_bridges_summary.txt → persistent salt bridges")
 print("  3. Residues in BOTH lists = highest-confidence drug targets")
 print("="*60)

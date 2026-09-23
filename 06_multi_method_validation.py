@@ -1,21 +1,15 @@
 #!/usr/bin/env python3
 """
-Master Cross-Validation & Consensus (Step 4 in Workflow)
-========================================================
-Analyses: Hotspot consensus (MM-GBSA, salt bridges) cross-referenced against
-your real MDpocket sub-pockets (SP1..SPn), Consensus Table & PyMOL.
+Multi-Method Cross-Validation & Consensus (Step 4.3 in Workflow)
+================================================================
+Analyses: Integrates Hotspot consensus (MM-GBSA, salt bridges) and 
+MDpocket sub-pockets (SP1..SPn) to identify high-confidence targets.
 
-CHANGE FROM PREVIOUS VERSION: sub-pockets are no longer re-derived here from
-per-replica .dx files (that was the old, abandoned 3-separate-replica-runs
-method). They're loaded directly from extract_subpockets.py's real output
-(Results/Pockets/summary/subpockets_summary.csv and subpockets_residues.csv),
-which was built the correct way: single concatenated, common-reference-
-aligned trajectory -> one mdpocket run -> connected-component blob
-detection -> residues within RESIDUE_CUTOFF of each blob ("core" residues).
+Generates the final consensus table and a PyMOL visualization script
+highlighting the cross-validated residues.
 
-Requires: Results/Pockets/summary/subpockets_summary.csv and
-          Results/Pockets/summary/subpockets_residues.csv (from
-          extract_subpockets.py), plus your MM-GBSA / salt-bridge CSVs.
+Requires: MDpocket summary CSVs (from pocket identification), 
+          MM-GBSA, and Salt Bridge CSVs.
 Outputs: Results/Pockets/
 """
 
@@ -37,13 +31,9 @@ SP_SUMMARY_CSV  = "Results/Pockets/summary/subpockets_core_summary.csv"   # sp_n
 SP_RESIDUES_CSV = "Results/Pockets/summary/subpockets_core_residues.csv"  # sp_name, chain, resnum, resname, dist_to_pocket_A
 
 # 2. PARAMETERS
-# RESIDUE_CUTOFF is NOT re-applied here - the "core" residues in
-# SP_RESIDUES_CSV were already selected using RESIDUE_CUTOFF back in
-# extract_subpockets.py. EXTENDED_CUTOFF below is a SEPARATE, wider net
-# applied only to hotspot/salt-bridge residues that fall outside every
-# pocket's core, to flag them as "plausibly associated with a nearby
-# pocket" (marked with a '+' suffix, e.g. "SP2+") rather than silently
-# dropping them - see get_nearest_sp().
+# EXTENDED_CUTOFF is applied to hotspot/salt-bridge residues that fall
+# outside any pocket's core (defined by RESIDUE_CUTOFF in pocket identification).
+# It flags them as plausibly associated with a nearby pocket (e.g., "SP2+").
 EXTENDED_CUTOFF = 8.0
 PROTEIN_PDB     = "MYC-MAX/MYC-MAX-500/charmm-gui/gromacs/crystal_proteins.pdb"
 
@@ -104,16 +94,12 @@ def load_external_data():
 
 
 def load_subpockets():
-    """Load sub-pockets from extract_subpockets.py's real output, instead of
-    re-deriving them from per-replica .dx files (the old, abandoned method).
-
-    sp_residues[sp_name] = set of (chain, resnum, resname) "core" residues -
-        i.e. within RESIDUE_CUTOFF of that pocket's voxel cloud, exactly as
-        computed by extract_subpockets.py. This script does not re-apply or
-        second-guess that cutoff.
-    sp_centroids[sp_name] = np.array([x, y, z]) - used only by
-        get_nearest_sp() to catch hotspot/salt-bridge residues that fall
-        just outside every pocket's core (see EXTENDED_CUTOFF above).
+    """
+    Load sub-pocket data from the pocket identification step.
+    
+    Returns:
+    - sp_residues: Dict mapping pocket name to its "core" residues.
+    - sp_centroids: Dict mapping pocket name to its centroid coordinates.
     """
     print("\n[Loading Sub-pockets from extract_subpockets.py output]")
     missing = [p for p in (SP_SUMMARY_CSV, SP_RESIDUES_CSV) if not os.path.exists(p)]
@@ -211,8 +197,7 @@ def main():
 
         # EXTENDED-NEIGHBORHOOD FALLBACK: if this residue isn't a core
         # member of any pocket, but sits within EXTENDED_CUTOFF of one,
-        # flag it as e.g. "SP2+" rather than dropping it - see the note on
-        # core vs. extended residues at the top of this file.
+        # flag it as e.g. "SP2+".
         if not sps and sp_centroids:
             nearest = get_nearest_sp(res, sp_centroids)
             if nearest:
@@ -240,7 +225,7 @@ def main():
 
     out_csv = os.path.join(OUTPUT_DIR, "cross_validation_unified.csv")
     df_filtered.to_csv(out_csv, index=False)
-    plot_consensus_table(df_filtered, sp_color_map, os.path.join(OUTPUT_DIR, "5.1_cross_validation_table.png"))
+    plot_consensus_table(df_filtered, sp_color_map, os.path.join(OUTPUT_DIR, "6.1_cross_validation_table.png"))
     write_pymol_script(df_filtered, os.path.join(OUTPUT_DIR, "visualize_cross_validation.pml"))
 
     print(f"\n[\u2713] Finished. {len(df_filtered)} high-confidence residues identified.")
@@ -272,7 +257,6 @@ def plot_consensus_table(df, sp_color_map, output_path):
                 cell.set_facecolor(sp_color_map.get(sp_key, base))
                 cell.set_text_props(fontweight="bold", color=TABLE_COLORS["header"])
 
-    fig.suptitle("Cross-validation: Salt Bridges | MM-GBSA | MDpocket", fontsize=16, fontweight="bold", y=0.88)
 
     legend_elements = [
         mpatches.Patch(facecolor=TABLE_COLORS["2/3_MYC"], label="Score >= 2 (MYC)"),

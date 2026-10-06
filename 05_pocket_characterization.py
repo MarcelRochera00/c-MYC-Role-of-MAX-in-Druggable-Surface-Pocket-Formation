@@ -66,6 +66,22 @@ EXCLUDE_UNDETECTED_FRAMES_FROM_STATS = False
 # Figure DPI for saved plots.
 FIGURE_DPI = 600
 
+# Colours for the per-pocket individual figures, assigned by pocket number
+# (SP1 = red, SP2 = green, SP3 = blue, SP4 = yellow, SP5 = magenta, SP6 = cyan).
+# Slightly muted versions of the pure colours so they are easier on the eye.
+POCKET_COLORS = [
+    "#D45B5B",  # red
+    "#4E9A6A",  # green (not too bright)
+    "#4F7FCB",  # blue
+    "#D6B24A",  # yellow
+    "#CF68A5",  # pink / magenta
+    "#4DB3C4",  # cyan
+]
+
+# Sub-folder (inside each pocket's output folder) for the individual
+# one-descriptor-per-figure plots.
+INDIVIDUAL_DIRNAME = "individual_descriptors"
+
 # ============================================================
 # End of CONFIG
 # ============================================================
@@ -292,11 +308,10 @@ def style_axis(ax: plt.Axes) -> None:
 
 
 def draw_trajectory(ax: plt.Axes, time_ns, y, color: str, window_frames: int) -> None:
-    """Thin grey raw trajectory behind a thicker colored rolling mean -
-    shared by both the per-pocket panels and the combined grid figures."""
-    ax.plot(time_ns, y, linewidth=0.6, color="0.7", alpha=0.8, zorder=1, label="raw")
+    """Rolling-mean trajectory only (no raw trace behind it) - shared by the
+    per-pocket 4-panel figure and the combined grid figures."""
     rolled = pd.Series(y).rolling(window_frames, center=True, min_periods=1).mean()
-    ax.plot(time_ns, rolled, linewidth=2.2, color=color, zorder=3,
+    ax.plot(time_ns, rolled, linewidth=1.8, color=color, zorder=3,
              solid_capstyle="round", label=f"rolling mean ({window_frames} frames)")
 
 
@@ -501,6 +516,64 @@ def plot_all_descriptors_grid(results: list[PocketResult], specs: list[Descripto
     plt.close(fig)
 
 
+def pocket_color(pocket_name: str) -> str:
+    """Colour for a pocket, by the number in its name (SP1 -> first colour,
+    SP2 -> second, ...). Wraps around if there are more pockets than colours."""
+    match = re.search(r"(\d+)\s*$", pocket_name)
+    idx = int(match.group(1)) - 1 if match else 0
+    return POCKET_COLORS[idx % len(POCKET_COLORS)]
+
+
+def plot_individual_descriptors(df: pd.DataFrame, pocket_name: str, outdir: Path,
+                                 exclude_undetected: bool, window_frames: int) -> list[Path]:
+    """One separate figure per descriptor (volume, hydrophobicity, local
+    hydrophobic density, polarity) for a single pocket, drawn in that
+    pocket's own colour: rolling mean line plus a dashed mean line."""
+    plt.rcParams.update({
+        "font.size": 11,
+        "axes.titlesize": 13,
+        "axes.labelsize": 11,
+        "axes.titleweight": "bold",
+    })
+
+    color = pocket_color(pocket_name)
+    plot_df = df
+    if exclude_undetected and "pock_volume" in df.columns:
+        plot_df = df.loc[df["pock_volume"] > 0]
+
+    outdir.mkdir(parents=True, exist_ok=True)
+    written = []
+    for spec in PLOTS:
+        if spec.column not in plot_df.columns or plot_df[spec.column].isna().all():
+            print(f"[warning] [{pocket_name}] '{spec.column}' not found - skipping individual figure.")
+            continue
+
+        t = plot_df["time_ns"].to_numpy()
+        y = plot_df[spec.column]
+        rolled = y.rolling(window_frames, center=True, min_periods=1).mean()
+        mean_val = float(y.mean())
+
+        fig, ax = plt.subplots(figsize=(9, 4.5))
+        ax.plot(t, rolled.to_numpy(), linewidth=1.8, color=color, zorder=3,
+                label=f"rolling mean ({window_frames} frames)")
+        ax.axhline(mean_val, linestyle="--", linewidth=1.2, color="black", alpha=0.6,
+                   zorder=2, label=f"mean = {mean_val:.2f}")
+
+        suffix = " (excl. undetected frames)" if exclude_undetected else ""
+        ax.set_title(f"{pocket_name} - {spec.title}{suffix}")
+        ax.set_xlabel("Time (ns)")
+        ax.set_ylabel(spec.ylabel)
+        ax.legend(loc="upper right", fontsize=9, framealpha=0.9)
+        style_axis(ax)
+
+        fig.tight_layout()
+        outpath = outdir / f"{pocket_name}_{spec.column}.png"
+        fig.savefig(outpath, dpi=FIGURE_DPI)
+        plt.close(fig)
+        written.append(outpath)
+    return written
+
+
 def plot_pocket_means_table(results: list[PocketResult], specs: list[DescriptorPlot],
                              outpath: Path, exclude_undetected: bool) -> None:
     """Quick-look PNG table: one row per pocket, one column per plotted
@@ -651,9 +724,15 @@ def process_pocket(pocket_dir: Path, output_root: Path) -> PocketResult | None:
     plot_path = pocket_outdir / f"{pocket_name}_4panel.png"
     plot_single_pocket(df, pocket_name, plot_path, EXCLUDE_UNDETECTED_FRAMES_FROM_STATS, window_frames)
 
+    individual_paths = plot_individual_descriptors(
+        df, pocket_name, pocket_outdir / INDIVIDUAL_DIRNAME,
+        EXCLUDE_UNDETECTED_FRAMES_FROM_STATS, window_frames)
+
     print(f"[info] Wrote: {pocket_outdir / 'descriptors.csv'}")
     print(f"[info] Wrote: {pocket_outdir / 'summary_statistics.csv'}")
     print(f"[info] Wrote: {plot_path}")
+    print(f"[info] Wrote {len(individual_paths)} individual figure(s) in "
+          f"{pocket_outdir / INDIVIDUAL_DIRNAME}")
 
     return PocketResult(name=pocket_name, df=df, stats=stats)
 

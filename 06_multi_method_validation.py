@@ -155,7 +155,7 @@ def get_nearest_sp(res, centroids_sp):
             best_sp, min_dist = name, dist
 
     if min_dist < EXTENDED_CUTOFF:
-        return f"{best_sp}+"
+        return f"{best_sp}"
     return None
 
 

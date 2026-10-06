@@ -141,7 +141,7 @@ def plot_rmsf(ax, results_dict):
                alpha=0.6, label="High flexibility (3 Å)")
     ax.set_xlabel("Residue number", fontsize=11)
     ax.set_ylabel("RMSF (Å)",       fontsize=12, fontweight="bold")
-    ax.set_title("Graph B: Per-Residue Flexibility (RMSF, ref = first frame)", fontsize=13, fontweight="bold")
+    ax.set_title("Graph B: Per-Residue Flexibility (RMSF)", fontsize=13, fontweight="bold")
     ax.legend(fontsize=9, framealpha=0.85)
     ax.grid(alpha=0.25)
 

@@ -8,22 +8,31 @@ Processes every sub-pocket (SP1, SP2, ...) found under ROOT_DIR.
 For each pocket, this script:
   1. Parses the descriptor file (e.g. SP1_descriptors.txt).
   2. Adds a time_ns column based on snapshot index.
-  3. Generates per-pocket statistics (mean, min, max, std).
-  4. Plots MDpocket descriptors over the trajectory.
+  3. Writes descriptors.csv and summary_statistics.csv.
 
-After parsing all pockets, it aggregates results and generates summary
-figures, tables, and statistics.
+After parsing all pockets, it generates:
+  - Combined figures 4.1-4.4 (one per descriptor, one panel per pocket),
+    each showing the per-frame values (grey), the rolling mean and the mean.
+  - Combined figure 4.5 (all descriptors x all pockets), same styling.
+  - 4.6 table: mean of each descriptor + detection frequency per sub-pocket.
+  - pocket_summary_statistics.csv (long format, all descriptors).
+  - pocket_descriptor_report.txt: readable report of the 4 plotted
+    descriptors per pocket, with and without volume-0 frames.
 """
 
 from __future__ import annotations
 
 import math
 import re
+import textwrap
 from pathlib import Path
 from typing import NamedTuple
 
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.colors import to_rgba
+from matplotlib.lines import Line2D
+from matplotlib.patches import Rectangle
 
 # ============================================================
 # >>> CONFIG - the only section you should need to touch <<<
@@ -36,57 +45,44 @@ ROOT_DIR = Path("Results/Pockets")
 POCKET_DIR_PATTERN = "SP*"
 
 # Suffix of the descriptor filename (as written by mdpocket) inside each
-# pocket folder. The actual file mdpocket writes is prefixed with the
-# pocket's own name, e.g. "SP1_descriptors.txt" inside the SP1 folder,
-# "SP2_descriptors.txt" inside SP2, etc. - so the filename actually
-# looked up is "<pocket_name>" + DESCRIPTOR_SUFFIX, built per pocket in
-# find_descriptor_file() below. A bare "_descriptors.txt" (no prefix)
-# would also match other pockets' prefixed files or unrelated
-# "*_descriptors.txt" files if several sub-pockets' outputs happen to
-# live in the same folder, so the prefix match is required, not optional.
+# pocket folder. The filename actually looked up is "<pocket_name>" +
+# DESCRIPTOR_SUFFIX (e.g. "SP1_descriptors.txt" inside the SP1 folder).
 DESCRIPTOR_SUFFIX = "_descriptors.txt"
 
 # Name of the folder (created under ROOT_DIR) that all outputs go into.
 OUTPUT_DIRNAME = "sub_pockets_analysis"
 
 # Trajectory timing: time_ns = snapshot_index * TIME_PER_SNAPSHOT_NS.
-# Example: 500 ns trajectory saved every 50 ps -> 0.05 ns/snapshot.
 TIME_PER_SNAPSHOT_NS = 0.05
 
 # Rolling-mean smoothing window, in nanoseconds (converted to a frame
-# count using TIME_PER_SNAPSHOT_NS). Kept within the requested 5-10 ns range.
+# count using TIME_PER_SNAPSHOT_NS).
 ROLLING_WINDOW_NS = 7.5
 
 # If True, frames where the pocket was NOT detected (pock_volume == 0) are
-# excluded from summary statistics and from rolling means / axis limits.
-# The raw per-frame CSV always keeps every successfully parsed row (zeros
-# included) regardless of this flag.
+# excluded from the figures, the CSV statistics and the means table.
+# (The text report ALWAYS shows both versions, regardless of this flag, and
+# the raw per-frame CSV always keeps every parsed row.)
 EXCLUDE_UNDETECTED_FRAMES_FROM_STATS = False
 
 # Figure DPI for saved plots.
 FIGURE_DPI = 600
 
-# Colours for the per-pocket individual figures, assigned by pocket number
-# (SP1 = red, SP2 = green, SP3 = blue, SP4 = yellow, SP5 = magenta, SP6 = cyan).
-# Slightly muted versions of the pure colours so they are easier on the eye.
-POCKET_COLORS = [
-    "#D45B5B",  # red
-    "#4E9A6A",  # green (not too bright)
-    "#4F7FCB",  # blue
-    "#D6B24A",  # yellow
-    "#CF68A5",  # pink / magenta
-    "#4DB3C4",  # cyan
-]
+# Figure 4.6 (means table): if True, descriptor means are computed over the
+# frames where the pocket was detected (pock_volume > 0), so they aren't diluted
+# by closed frames (that is what the detection-frequency column reports).
+# If False, all frames are used.
+TABLE_MEANS_DETECTED_ONLY = True
 
-# Sub-folder (inside each pocket's output folder) for the individual
-# one-descriptor-per-figure plots.
-INDIVIDUAL_DIRNAME = "individual_descriptors"
+# Per-frame (raw) trace drawn behind the rolling mean in the combined figures.
+RAW_COLOR = "#9A9A9A"
+RAW_LINEWIDTH = 0.5
+RAW_ALPHA = 0.6
 
 # ============================================================
 # End of CONFIG
 # ============================================================
 
-# Canonical column names written by mdpocket (see mdpocket.h, M_MDP_OUTP_HEADER)
 EXPECTED_COLUMNS = [
     "snapshot", "pock_volume", "pock_asa", "pock_pol_asa", "pock_apol_asa",
     "pock_asa22", "pock_pol_asa22", "pock_apol_asa22", "nb_AS", "mean_as_ray",
@@ -104,8 +100,6 @@ class DescriptorPlot(NamedTuple):
     filename_stub: str
 
 
-# The 4 descriptors plotted, in order, with their titles / y-axis labels /
-# colors, and the stub used to name the combined per-descriptor figure.
 PLOTS = [
     DescriptorPlot("pock_volume", "Pocket Volume", "Volume (\u00c5\u00b3)",
                     "#2E86AB", "4.1_combined_pocket_volume"),
@@ -126,8 +120,7 @@ class PocketResult(NamedTuple):
 
 
 class Diagnostics:
-    """Accumulates the parser/report diagnostics for one pocket, and can
-    print a per-pocket report or fold into a run-wide summary."""
+    """Accumulates the parser diagnostics for one pocket."""
 
     def __init__(self, pocket_name: str):
         self.pocket_name = pocket_name
@@ -166,9 +159,7 @@ class Diagnostics:
 
 
 def natural_sp_sort_key(path: Path):
-    """Sort pocket folders numerically by the digits in their name (SP2
-    before SP10), falling back to plain alphabetical for anything that
-    doesn't end in digits."""
+    """Sort pocket folders numerically (SP2 before SP10)."""
     match = re.search(r"(\d+)\s*$", path.name)
     if match:
         return (0, int(match.group(1)), path.name)
@@ -176,8 +167,6 @@ def natural_sp_sort_key(path: Path):
 
 
 def discover_pocket_dirs(root: Path, pattern: str) -> list[Path]:
-    """Every subfolder of `root` matching `pattern`, sorted naturally
-    (SP1, SP2, ... SP10, ...)."""
     if not root.exists():
         raise FileNotFoundError(f"ROOT_DIR does not exist: {root}")
     dirs = [p for p in root.glob(pattern) if p.is_dir()]
@@ -185,14 +174,8 @@ def discover_pocket_dirs(root: Path, pattern: str) -> list[Path]:
 
 
 def find_descriptor_file(folder: Path, pocket_name: str, suffix: str) -> Path | None:
-    """Locate the descriptor file for one pocket folder. mdpocket names
-    this file "<pocket_name><suffix>" (e.g. "SP1_descriptors.txt" inside
-    the SP1 folder) - other prefixed files for the same or other pockets
-    (e.g. SP1_atoms.txt, SP1_info.txt, or another pocket's own
-    "SPn_descriptors.txt") can live in the same folder, so we look up the
-    exact prefixed name rather than any file merely ending in `suffix`.
-    Returns None (rather than raising) so the caller can report it as a
-    missing pocket and continue with the rest of the batch."""
+    """Locate "<pocket_name><suffix>" inside a pocket folder. Returns None
+    (rather than raising) so the batch can continue."""
     expected_name = f"{pocket_name}{suffix}"
     candidate = folder / expected_name
     if candidate.exists():
@@ -203,11 +186,10 @@ def find_descriptor_file(folder: Path, pocket_name: str, suffix: str) -> Path | 
 
 def load_descriptors(filepath: Path, pocket_name: str) -> tuple[pd.DataFrame, Diagnostics]:
     """
-    Manually parse an mdpocket descriptors file line by line. Nothing is
-    silently dropped: every non-blank line after the header is either
-    parsed into a row, or recorded as malformed in the returned
-    Diagnostics. Short rows (pocket not detected that frame) are kept,
-    with pock_volume forced to 0.0 and every other column set to NaN.
+    Manually parse an mdpocket descriptors file line by line. Every non-blank
+    line after the header is either parsed into a row, or recorded as
+    malformed. Short rows (pocket not detected that frame) are kept, with
+    pock_volume forced to 0.0 and every other column set to NaN.
     """
     diag = Diagnostics(pocket_name)
 
@@ -218,8 +200,6 @@ def load_descriptors(filepath: Path, pocket_name: str) -> tuple[pd.DataFrame, Di
         raise ValueError(f"{filepath} is empty.")
     diag.total_lines = len(raw_lines)
 
-    # header: strip a leading '#' token if present (mdpocket writes
-    # '# snapshot pock_volume ...' with '#' as its own token)
     header_tokens = raw_lines[0].split()
     if header_tokens[0] == "#":
         header_tokens = header_tokens[1:]
@@ -231,7 +211,7 @@ def load_descriptors(filepath: Path, pocket_name: str) -> tuple[pd.DataFrame, Di
               f"column order. Proceeding with the header as found in the file.")
 
     rows = []
-    for i, line in enumerate(raw_lines[1:], start=2):  # start=2 -> real file line number
+    for i, line in enumerate(raw_lines[1:], start=2):
         fields = line.split()
 
         if len(fields) == n_cols:
@@ -243,10 +223,6 @@ def load_descriptors(filepath: Path, pocket_name: str) -> tuple[pd.DataFrame, Di
             rows.append(row)
 
         elif len(fields) < n_cols:
-            # short line for a frame where the reference pocket was NOT
-            # detected (typically just 'snapshot 0.00' or similar) -
-            # recognized rather than silently discarded, since discarding
-            # would exclude real pocket-closure events and inflate the mean.
             try:
                 partial = [float(f) for f in fields]
             except ValueError:
@@ -259,7 +235,6 @@ def load_descriptors(filepath: Path, pocket_name: str) -> tuple[pd.DataFrame, Di
             diag.n_short_rows += 1
 
         else:
-            # more fields than expected - genuinely malformed, don't guess
             diag.malformed.append((i, len(fields), line))
 
     diag.n_parsed_rows = len(rows)
@@ -279,7 +254,6 @@ def load_descriptors(filepath: Path, pocket_name: str) -> tuple[pd.DataFrame, Di
 
 
 def add_time_column(df: pd.DataFrame, time_per_snapshot_ns: float) -> pd.DataFrame:
-    """Insert a time_ns column right after snapshot: time_ns = snapshot * time_per_snapshot_ns."""
     df = df.copy()
     df.insert(1, "time_ns", df["snapshot"] * time_per_snapshot_ns)
     return df
@@ -301,69 +275,29 @@ def rolling_window_frames(rolling_window_ns: float, time_per_snapshot_ns: float)
 
 
 def style_axis(ax: plt.Axes) -> None:
-    """Shared publication-style cleanup applied to every axis."""
     ax.grid(alpha=0.3, linestyle=":")
     for spine in ("top", "right"):
         ax.spines[spine].set_visible(False)
 
 
 def draw_trajectory(ax: plt.Axes, time_ns, y, color: str, window_frames: int) -> None:
-    """Rolling-mean trajectory only (no raw trace behind it) - shared by the
-    per-pocket 4-panel figure and the combined grid figures."""
+    """Per-frame values (thin grey line) with the rolling mean on top."""
+    ax.plot(time_ns, y, linewidth=RAW_LINEWIDTH, color=RAW_COLOR, alpha=RAW_ALPHA, zorder=1)
     rolled = pd.Series(y).rolling(window_frames, center=True, min_periods=1).mean()
-    ax.plot(time_ns, rolled, linewidth=1.8, color=color, zorder=3,
-             solid_capstyle="round", label=f"rolling mean ({window_frames} frames)")
+    ax.plot(time_ns, rolled, linewidth=1.8, color=color, zorder=3, solid_capstyle="round")
 
 
-def plot_single_pocket(df: pd.DataFrame, pocket_name: str, outpath: Path,
-                        exclude_undetected: bool, window_frames: int) -> None:
-    """4-panel time-series figure (one panel per descriptor) for a single pocket."""
-    plt.rcParams.update({
-        "font.size": 11,
-        "axes.titlesize": 13,
-        "axes.labelsize": 11,
-        "axes.titleweight": "bold",
-    })
-
-    plot_df = df
-    if exclude_undetected and "pock_volume" in df.columns:
-        plot_df = df.loc[df["pock_volume"] > 0]
-
-    fig, axes = plt.subplots(2, 2, figsize=(13, 9))
-    axes = axes.flatten()
-
-    for ax, spec in zip(axes, PLOTS):
-        if spec.column not in plot_df.columns or plot_df[spec.column].isna().all():
-            ax.set_title(f"{spec.title}\n(data not found)", color="gray")
-            ax.axis("off")
-            continue
-
-        time_ns = plot_df["time_ns"].to_numpy()
-        y = plot_df[spec.column].to_numpy()
-        draw_trajectory(ax, time_ns, y, spec.color, window_frames)
-
-        mean_val = float(pd.Series(y).mean())
-        ax.axhline(mean_val, linestyle="--", linewidth=1.3, color="black",
-                    alpha=0.6, zorder=2, label=f"mean = {mean_val:.2f}")
-
-        ax.set_title(f"{spec.title} Over Time")
-        ax.set_xlabel("Time (ns)")
-        ax.set_ylabel(spec.ylabel)
-        ax.legend(loc="upper right", fontsize=8, framealpha=0.9)
-        style_axis(ax)
-
-    suffix = " (excl. undetected frames)" if exclude_undetected else ""
-    fig.suptitle(f"{pocket_name} - MDpocket Descriptors Over the Trajectory{suffix}",
-                 fontsize=15, fontweight="bold")
-    fig.tight_layout(rect=[0, 0, 1, 0.96])
-    fig.savefig(outpath, dpi=FIGURE_DPI)
-    plt.close(fig)
+def add_figure_legend(fig: plt.Figure, rolling_color: str, window_frames: int) -> None:
+    handles = [
+        Line2D([0], [0], color=RAW_COLOR, lw=1.5, label="per-frame value"),
+        Line2D([0], [0], color=rolling_color, lw=2.0, label=f"rolling mean ({window_frames} frames)"),
+        Line2D([0], [0], color="black", lw=1.3, ls="--", alpha=0.6, label="mean"),
+    ]
+    fig.legend(handles=handles, loc="lower center", ncol=3, frameon=False, fontsize=10)
 
 
 def grid_shape(n: int) -> tuple[int, int]:
-    """(nrows, ncols) for the combined grid: up to 3 columns per row, which
-    gives exactly a 2x3 grid for the 6-pocket case this was built for, and
-    degrades sensibly for other pocket counts."""
+    """Up to 3 columns per row (2x3 for 6 pockets)."""
     ncols = min(3, n) if n > 0 else 1
     nrows = math.ceil(n / ncols) if ncols else 1
     return nrows, ncols
@@ -372,9 +306,8 @@ def grid_shape(n: int) -> tuple[int, int]:
 def plot_combined_descriptor(results: list[PocketResult], spec: DescriptorPlot,
                               outpath: Path, exclude_undetected: bool,
                               window_frames: int) -> None:
-    """One figure per descriptor, one panel per pocket (SP1 ... SPn), with
-    identical x and y limits across all panels so pockets are directly
-    comparable."""
+    """One figure per descriptor, one panel per pocket, identical x/y limits
+    across panels. Per-frame values in grey + rolling mean + mean line."""
     plt.rcParams.update({
         "font.size": 11,
         "axes.titlesize": 12,
@@ -382,8 +315,6 @@ def plot_combined_descriptor(results: list[PocketResult], spec: DescriptorPlot,
         "axes.titleweight": "bold",
     })
 
-    # gather per-pocket (time, y) series, applying the undetected-frame
-    # filter consistently with the rest of the script
     series_by_pocket = {}
     for res in results:
         data = res.df
@@ -397,7 +328,6 @@ def plot_combined_descriptor(results: list[PocketResult], spec: DescriptorPlot,
               f"combined figure {outpath.name}.")
         return
 
-    # shared axis limits across every panel in this figure
     all_x = pd.concat([pd.Series(t) for t, _ in series_by_pocket.values()])
     all_y = pd.concat([pd.Series(y) for _, y in series_by_pocket.values()])
     x_min, x_max = float(all_x.min()), float(all_x.max())
@@ -425,7 +355,6 @@ def plot_combined_descriptor(results: list[PocketResult], spec: DescriptorPlot,
         ax.set_title(res.name)
         style_axis(ax)
 
-    # hide any unused trailing axes if pocket count doesn't fill the grid
     for ax in axes[len(results):]:
         ax.axis("off")
 
@@ -436,7 +365,8 @@ def plot_combined_descriptor(results: list[PocketResult], spec: DescriptorPlot,
 
     suffix = " (excl. undetected frames)" if exclude_undetected else ""
     fig.suptitle(f"{spec.title} Across Sub-Pockets{suffix}", fontsize=15, fontweight="bold")
-    fig.tight_layout(rect=[0, 0, 1, 0.95])
+    add_figure_legend(fig, spec.color, window_frames)
+    fig.tight_layout(rect=[0, 0.05, 1, 0.95])
     fig.savefig(outpath, dpi=FIGURE_DPI)
     plt.close(fig)
 
@@ -444,10 +374,8 @@ def plot_combined_descriptor(results: list[PocketResult], spec: DescriptorPlot,
 def plot_all_descriptors_grid(results: list[PocketResult], specs: list[DescriptorPlot],
                                outpath: Path, exclude_undetected: bool,
                                window_frames: int) -> None:
-    """One single figure: rows = the 4 descriptors, columns = every pocket
-    (SP1 ... SPn). Y-limits are shared across a row (so pockets are
-    comparable per descriptor); x-limits are shared across the whole
-    figure (same trajectory)."""
+    """One figure: rows = descriptors, columns = pockets. Y-limits shared per
+    row, x-limits shared across the figure."""
     plt.rcParams.update({
         "font.size": 10,
         "axes.titlesize": 11,
@@ -455,8 +383,6 @@ def plot_all_descriptors_grid(results: list[PocketResult], specs: list[Descripto
         "axes.titleweight": "bold",
     })
 
-    # filtered (time, per-descriptor-values) per pocket, applying the same
-    # undetected-frame filter used everywhere else
     filtered = {}
     for res in results:
         data = res.df
@@ -464,7 +390,6 @@ def plot_all_descriptors_grid(results: list[PocketResult], specs: list[Descripto
             data = data.loc[data["pock_volume"] > 0]
         filtered[res.name] = data
 
-    # x-limits shared across the entire figure
     all_x = pd.concat([data["time_ns"] for data in filtered.values()])
     x_min, x_max = float(all_x.min()), float(all_x.max())
 
@@ -473,7 +398,6 @@ def plot_all_descriptors_grid(results: list[PocketResult], specs: list[Descripto
                               sharex=True, squeeze=False)
 
     for i, spec in enumerate(specs):
-        # y-limits shared within this descriptor's row only
         row_series = {name: data[spec.column] for name, data in filtered.items()
                        if spec.column in data.columns}
         if row_series:
@@ -511,168 +435,157 @@ def plot_all_descriptors_grid(results: list[PocketResult], specs: list[Descripto
 
     suffix = " (excl. undetected frames)" if exclude_undetected else ""
     fig.suptitle(f"All Descriptors Across All Sub-Pockets{suffix}", fontsize=16, fontweight="bold")
-    fig.tight_layout(rect=[0, 0, 1, 0.96])
+    # rolling-mean colour differs per row, so the legend uses a neutral colour
+    add_figure_legend(fig, "#333333", window_frames)
+    fig.tight_layout(rect=[0, 0.04, 1, 0.96])
     fig.savefig(outpath, dpi=FIGURE_DPI)
     plt.close(fig)
 
 
-def pocket_color(pocket_name: str) -> str:
-    """Colour for a pocket, by the number in its name (SP1 -> first colour,
-    SP2 -> second, ...). Wraps around if there are more pockets than colours."""
-    match = re.search(r"(\d+)\s*$", pocket_name)
-    idx = int(match.group(1)) - 1 if match else 0
-    return POCKET_COLORS[idx % len(POCKET_COLORS)]
-
-
-def plot_individual_descriptors(df: pd.DataFrame, pocket_name: str, outdir: Path,
-                                 exclude_undetected: bool, window_frames: int) -> list[Path]:
-    """One separate figure per descriptor (volume, hydrophobicity, local
-    hydrophobic density, polarity) for a single pocket, drawn in that
-    pocket's own colour: rolling mean line plus a dashed mean line."""
-    plt.rcParams.update({
-        "font.size": 11,
-        "axes.titlesize": 13,
-        "axes.labelsize": 11,
-        "axes.titleweight": "bold",
-    })
-
-    color = pocket_color(pocket_name)
-    plot_df = df
-    if exclude_undetected and "pock_volume" in df.columns:
-        plot_df = df.loc[df["pock_volume"] > 0]
-
-    outdir.mkdir(parents=True, exist_ok=True)
-    written = []
-    for spec in PLOTS:
-        if spec.column not in plot_df.columns or plot_df[spec.column].isna().all():
-            print(f"[warning] [{pocket_name}] '{spec.column}' not found - skipping individual figure.")
-            continue
-
-        t = plot_df["time_ns"].to_numpy()
-        y = plot_df[spec.column]
-        rolled = y.rolling(window_frames, center=True, min_periods=1).mean()
-        mean_val = float(y.mean())
-
-        fig, ax = plt.subplots(figsize=(9, 4.5))
-        ax.plot(t, rolled.to_numpy(), linewidth=1.8, color=color, zorder=3,
-                label=f"rolling mean ({window_frames} frames)")
-        ax.axhline(mean_val, linestyle="--", linewidth=1.2, color="black", alpha=0.6,
-                   zorder=2, label=f"mean = {mean_val:.2f}")
-
-        suffix = " (excl. undetected frames)" if exclude_undetected else ""
-        ax.set_title(f"{pocket_name} - {spec.title}{suffix}")
-        ax.set_xlabel("Time (ns)")
-        ax.set_ylabel(spec.ylabel)
-        ax.legend(loc="upper right", fontsize=9, framealpha=0.9)
-        style_axis(ax)
-
-        fig.tight_layout()
-        outpath = outdir / f"{pocket_name}_{spec.column}.png"
-        fig.savefig(outpath, dpi=FIGURE_DPI)
-        plt.close(fig)
-        written.append(outpath)
-    return written
-
-
 def plot_pocket_means_table(results: list[PocketResult], specs: list[DescriptorPlot],
-                             outpath: Path, exclude_undetected: bool) -> None:
-    """Quick-look PNG table: one row per pocket, one column per plotted
-    descriptor, cell value = that pocket's mean (matches the 'Mean' column
-    of pocket_summary_statistics.csv / pocket_means_summary.txt, just laid
-    out for fast visual scanning instead of parsing a CSV or text file).
-    """
-    plt.rcParams.update({"font.size": 11})
+                             outpath: Path) -> None:
+    """Figure 4.6: compact grid table, one row per sub-pocket: mean of each
+    plotted descriptor (header in that descriptor's colour, body lightly
+    tinted) + detection frequency (% of frames with pock_volume > 0).
+    Computed straight from the per-frame data, independent of
+    EXCLUDE_UNDETECTED_FRAMES_FROM_STATS."""
+    slate, name_fill, line = "#2E4057", "#EEF1F5", "#B8BFCA"
 
-    def col_label(spec: DescriptorPlot) -> str:
-        # Only show a unit line under the title when the ylabel actually
-        # contains a real unit (e.g. "(Å³)" for volume) - not a plain word
-        # like "(Density)", which is just the descriptor name again.
-        unit_match = re.search(r"\(([^)]+)\)", spec.ylabel)
-        if unit_match and re.search(r"[^A-Za-z\s]", unit_match.group(1)):
-            return f"{spec.title}\n({unit_match.group(1)})"
-        return spec.title
+    def header_label(spec: DescriptorPlot) -> str:
+        title = textwrap.fill(spec.title, 20)
+        unit = re.search(r"\(([^)]+)\)", spec.ylabel)
+        return f"{title} ({unit.group(1)})" if unit else title
 
-    col_labels = [col_label(spec) for spec in specs]
-    row_labels = [res.name for res in results]
+    def mean_of(df: pd.DataFrame, col: str) -> float:
+        data = df.loc[df["pock_volume"] > 0] if TABLE_MEANS_DETECTED_ONLY else df
+        return float(data[col].mean()) if col in data.columns else float("nan")
 
-    cell_text = []
-    for res in results:
-        row = []
-        for spec in specs:
-            if spec.column in res.stats.index:
-                mean_val = res.stats.loc[spec.column, "mean"]
-                row.append(f"{mean_val:.2f}" if pd.notna(mean_val) else "n/a")
-            else:
-                row.append("n/a")
-        cell_text.append(row)
+    name_w, val_w, det_w = 1.0, 1.8, 1.7
+    head_h, row_h = 0.62, 0.36
+    n_rows = len(results)
+    W = name_w + len(specs) * val_w + det_w
+    H = head_h + n_rows * row_h
+    pad = 0.03
 
-    n_rows, n_cols = len(results), len(specs)
-    fig_width = 2.6 * n_cols + 2.0
-    fig_height = 0.9 + 0.6 * n_rows
-    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+    fig = plt.figure(figsize=(W + 2 * pad, H + 2 * pad))
+    ax = fig.add_axes([0, 0, 1, 1])
+    ax.set_xlim(-pad, W + pad)
+    ax.set_ylim(H + pad, -pad)
     ax.axis("off")
 
-    table = ax.table(
-        cellText=cell_text,
-        rowLabels=row_labels,
-        colLabels=col_labels,
-        cellLoc="center",
-        rowLoc="center",
-        loc="center",
-    )
-    table.auto_set_font_size(False)
-    table.set_fontsize(11)
-    table.scale(1, 2.0)
+    def cell(x, y, w, h, fill):
+        ax.add_patch(Rectangle((x, y), w, h, facecolor=fill, edgecolor=line, linewidth=0.8))
 
-    header_color = "#2E4057"
-    stripe_color = "#EEF3F7"
+    # columns: (x, width, header fill, body fill, header text)
+    columns = [(0.0, name_w, slate, name_fill, "Sub-pocket")]
+    x = name_w
+    for spec in specs:
+        columns.append((x, val_w, spec.color, to_rgba(spec.color, 0.12), header_label(spec)))
+        x += val_w
+    columns.append((x, det_w, slate, to_rgba(slate, 0.08), "Detection\nfrequency (%)"))
 
-    # header row (col labels live in row index 0)
-    for j in range(n_cols):
-        cell = table[0, j]
-        cell.set_facecolor(header_color)
-        cell.set_text_props(color="white", weight="bold")
-        cell.set_edgecolor("white")
+    for cx, cw, hfill, _, label in columns:
+        cell(cx, 0, cw, head_h, hfill)
+        ax.text(cx + cw / 2, head_h / 2, label, color="white", fontsize=10,
+                fontweight="bold", ha="center", va="center", linespacing=1.2)
 
-    # row-label column (matplotlib places these at column index -1)
-    for i in range(n_rows):
-        cell = table[i + 1, -1]
-        cell.set_facecolor(header_color)
-        cell.set_text_props(color="white", weight="bold")
-        cell.set_edgecolor("white")
+    for i, res in enumerate(results):
+        ry = head_h + i * row_h
+        yc = ry + row_h / 2
+        n_total = len(res.df)
+        frac = 100 * int((res.df["pock_volume"] > 0).sum()) / n_total if n_total else float("nan")
+        values = [res.name]
+        values += [f"{v:.2f}" if pd.notna(v) else "n/a"
+                   for v in (mean_of(res.df, s.column) for s in specs)]
+        values.append(f"{frac:.1f}" if pd.notna(frac) else "n/a")
 
-    # alternating stripes + column accent colors on the data cells
-    for i in range(n_rows):
-        for j in range(n_cols):
-            cell = table[i + 1, j]
-            cell.set_edgecolor("white")
-            cell.set_facecolor(stripe_color if i % 2 == 0 else "white")
-            cell.get_text().set_color(specs[j].color)
-            cell.get_text().set_weight("bold")
+        for (cx, cw, _, bfill, _), text in zip(columns, values):
+            cell(cx, ry, cw, row_h, bfill)
+            ax.text(cx + cw / 2, yc, text, fontsize=10.5, ha="center", va="center",
+                    color=slate if cx == 0 else "#1F2328",
+                    fontweight="bold" if cx == 0 else "normal")
 
-    fig.tight_layout()
-    fig.savefig(outpath, dpi=FIGURE_DPI, bbox_inches="tight")
+    fig.savefig(outpath, dpi=FIGURE_DPI, facecolor="white")
     plt.close(fig)
 
 
-def write_pocket_means_summary(results: list[PocketResult], outpath: Path) -> None:
-    """Plain-text summary of each pocket's descriptor means - the quick
-    'what are the headline numbers' reference to go with the CSVs."""
-    lines = ["Pocket Descriptor Means - Summary", "=" * 70]
+def _label_with_unit(spec: DescriptorPlot) -> str:
+    m = re.search(r"\(([^)]+)\)", spec.ylabel)
+    return f"{spec.title} ({m.group(1)})" if m else spec.title
+
+
+def _fmt(x: float) -> str:
+    return f"{x:.3f}" if pd.notna(x) else "n/a"
+
+
+def _stats_table(data: pd.DataFrame, specs: list[DescriptorPlot]) -> list[str]:
+    """Aligned text table (Mean / Std / Min / Max) for the plotted descriptors."""
+    label_w = max(len(_label_with_unit(s)) for s in specs) + 2
+    lines = [f"    {'Descriptor':<{label_w}}{'Mean':>12}{'Std':>12}{'Min':>12}{'Max':>12}"]
+    lines.append("    " + "-" * (label_w + 48))
+    for spec in specs:
+        label = _label_with_unit(spec)
+        if spec.column not in data.columns or data[spec.column].dropna().empty:
+            lines.append(f"    {label:<{label_w}}{'n/a':>12}{'n/a':>12}{'n/a':>12}{'n/a':>12}")
+            continue
+        s = data[spec.column]
+        lines.append(f"    {label:<{label_w}}{_fmt(s.mean()):>12}{_fmt(s.std()):>12}"
+                     f"{_fmt(s.min()):>12}{_fmt(s.max()):>12}")
+    return lines
+
+
+def write_readable_report(results: list[PocketResult], specs: list[DescriptorPlot],
+                           outpath: Path) -> None:
+    """Readable per-pocket report of the plotted descriptors, computed both
+    INCLUDING and EXCLUDING the frames where pock_volume == 0 (pocket not
+    detected). Independent of EXCLUDE_UNDETECTED_FRAMES_FROM_STATS.
+
+    In the 'including' block, undetected frames count as 0 for every
+    descriptor (not only volume), so the mean reflects the pocket being
+    closed in those frames."""
+    bar = "=" * 76
+    lines = [
+        "POCKET DESCRIPTOR REPORT",
+        bar,
+        "For each pocket, the 4 descriptors are summarised twice:",
+        "  (A) INCLUDING frames where the pocket was not detected (pock_volume = 0;",
+        "      these frames count as 0 for every descriptor)",
+        "  (B) EXCLUDING those frames (detected frames only)",
+        f"Time per snapshot: {TIME_PER_SNAPSHOT_NS} ns",
+        "",
+    ]
+
     for res in results:
+        df = res.df
+        n_total = len(df)
+        undetected = df["pock_volume"] == 0
+        n_zero = int(undetected.sum())
+        n_det = n_total - n_zero
+        pct = 100 * n_zero / n_total if n_total else float("nan")
+
+        cols = [s.column for s in specs if s.column in df.columns]
+        incl = df.copy()
+        incl.loc[undetected, cols] = incl.loc[undetected, cols].fillna(0.0)
+        excl = df.loc[~undetected]
+
+        lines += [bar, res.name, bar,
+                  f"  Frames: {n_total} total | {n_det} detected | "
+                  f"{n_zero} with volume 0 ({pct:.1f}%)",
+                  "",
+                  f"  (A) Including volume-0 frames  (N = {n_total})"]
+        lines += _stats_table(incl, specs)
+        lines += ["", f"  (B) Excluding volume-0 frames  (N = {n_det})"]
+        if n_det:
+            lines += _stats_table(excl, specs)
+        else:
+            lines.append("    (pocket never detected - no frames left)")
         lines.append("")
-        lines.append(res.name)
-        lines.append("-" * len(res.name))
-        for descriptor, row in res.stats.iterrows():
-            mean_val = row["mean"]
-            mean_str = f"{mean_val:.4f}" if pd.notna(mean_val) else "n/a"
-            lines.append(f"  {descriptor:<25s}: {mean_str}")
-    outpath.write_text("\n".join(lines) + "\n")
+
+    outpath.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def compute_combined_summary(results: list[PocketResult]) -> pd.DataFrame:
-    """Long-format table: one row per (pocket, descriptor), with mean,
-    median, std, min, max, and coefficient of variation (std / mean)."""
+    """Long-format table: one row per (pocket, descriptor)."""
     records = []
     for res in results:
         for descriptor, row in res.stats.iterrows():
@@ -693,11 +606,9 @@ def compute_combined_summary(results: list[PocketResult]) -> pd.DataFrame:
 
 
 def process_pocket(pocket_dir: Path, output_root: Path) -> PocketResult | None:
-    """Full single-pocket pipeline: locate + parse the descriptor file,
-    add the time column, write descriptors.csv / summary_statistics.csv /
-    the 4-panel figure, and return the result for use in the combined
-    (cross-pocket) outputs. Returns None (after printing a warning) if the
-    pocket's descriptor file can't be found."""
+    """Locate + parse the descriptor file, add the time column, write
+    descriptors.csv / summary_statistics.csv. All figures are produced
+    afterwards in the combined outputs."""
     pocket_name = pocket_dir.name
     print(f"\n{'=' * 70}\n[info] Processing {pocket_name}\n{'=' * 70}")
 
@@ -720,19 +631,8 @@ def process_pocket(pocket_dir: Path, output_root: Path) -> PocketResult | None:
     df.to_csv(pocket_outdir / "descriptors.csv", index=False)
     stats.to_csv(pocket_outdir / "summary_statistics.csv")
 
-    window_frames = rolling_window_frames(ROLLING_WINDOW_NS, TIME_PER_SNAPSHOT_NS)
-    plot_path = pocket_outdir / f"{pocket_name}_4panel.png"
-    plot_single_pocket(df, pocket_name, plot_path, EXCLUDE_UNDETECTED_FRAMES_FROM_STATS, window_frames)
-
-    individual_paths = plot_individual_descriptors(
-        df, pocket_name, pocket_outdir / INDIVIDUAL_DIRNAME,
-        EXCLUDE_UNDETECTED_FRAMES_FROM_STATS, window_frames)
-
     print(f"[info] Wrote: {pocket_outdir / 'descriptors.csv'}")
     print(f"[info] Wrote: {pocket_outdir / 'summary_statistics.csv'}")
-    print(f"[info] Wrote: {plot_path}")
-    print(f"[info] Wrote {len(individual_paths)} individual figure(s) in "
-          f"{pocket_outdir / INDIVIDUAL_DIRNAME}")
 
     return PocketResult(name=pocket_name, df=df, stats=stats)
 
@@ -766,9 +666,9 @@ def main() -> None:
     combined_stats.to_csv(combined_csv, index=False)
     print(f"[info] Wrote: {combined_csv}")
 
-    means_txt = output_root / "pocket_means_summary.txt"
-    write_pocket_means_summary(results, means_txt)
-    print(f"[info] Wrote: {means_txt}")
+    report_txt = output_root / "pocket_descriptor_report.txt"
+    write_readable_report(results, PLOTS, report_txt)
+    print(f"[info] Wrote: {report_txt}")
 
     window_frames = rolling_window_frames(ROLLING_WINDOW_NS, TIME_PER_SNAPSHOT_NS)
     for spec in PLOTS:
@@ -783,7 +683,7 @@ def main() -> None:
     print(f"[info] Wrote: {grand_outpath}")
 
     means_table_outpath = output_root / "4.6_pocket_means_table.png"
-    plot_pocket_means_table(results, PLOTS, means_table_outpath, EXCLUDE_UNDETECTED_FRAMES_FROM_STATS)
+    plot_pocket_means_table(results, PLOTS, means_table_outpath)
     print(f"[info] Wrote: {means_table_outpath}")
 
     print(f"\n{'=' * 70}\n[done] Batch summary\n{'=' * 70}")

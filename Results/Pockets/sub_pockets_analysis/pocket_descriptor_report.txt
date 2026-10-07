@@ -1,0 +1,134 @@
+POCKET DESCRIPTOR REPORT
+============================================================================
+For each pocket, the 4 descriptors are summarised twice:
+  (A) INCLUDING frames where the pocket was not detected (pock_volume = 0;
+      these frames count as 0 for every descriptor)
+  (B) EXCLUDING those frames (detected frames only)
+Time per snapshot: 0.05 ns
+
+============================================================================
+SP1
+============================================================================
+  Frames: 36018 total | 30137 detected | 5881 with volume 0 (16.3%)
+
+  (A) Including volume-0 frames  (N = 36018)
+    Descriptor                              Mean         Std         Min         Max
+    --------------------------------------------------------------------------------
+    Pocket Volume (Å³)                   194.484     102.092       0.000     497.770
+    Hydrophobicity Score                  11.487       9.128     -34.500      67.330
+    Mean Local Hydrophobic Density        28.733      21.355       0.000     121.290
+    Polarity Score                         3.631       1.736       0.000       7.000
+
+  (B) Excluding volume-0 frames  (N = 30137)
+    Descriptor                              Mean         Std         Min         Max
+    --------------------------------------------------------------------------------
+    Pocket Volume (Å³)                   232.436      60.291      24.830     497.770
+    Hydrophobicity Score                  13.728       8.296     -34.500      67.330
+    Mean Local Hydrophobic Density        34.340      18.774       0.000     121.290
+    Polarity Score                         4.339       0.726       0.000       7.000
+
+============================================================================
+SP2
+============================================================================
+  Frames: 36018 total | 28423 detected | 7595 with volume 0 (21.1%)
+
+  (A) Including volume-0 frames  (N = 36018)
+    Descriptor                              Mean         Std         Min         Max
+    --------------------------------------------------------------------------------
+    Pocket Volume (Å³)                   175.557     105.506       0.000     525.910
+    Hydrophobicity Score                   9.232       7.078     -22.500      69.000
+    Mean Local Hydrophobic Density        16.963      15.855       0.000     107.360
+    Polarity Score                         3.419       1.954       0.000       8.000
+
+  (B) Excluding volume-0 frames  (N = 28423)
+    Descriptor                              Mean         Std         Min         Max
+    --------------------------------------------------------------------------------
+    Pocket Volume (Å³)                   222.469      60.576      24.790     525.910
+    Hydrophobicity Score                  11.699       5.884     -22.500      69.000
+    Mean Local Hydrophobic Density        21.496      14.870       0.000     107.360
+    Polarity Score                         4.333       0.937       0.000       8.000
+
+============================================================================
+SP3
+============================================================================
+  Frames: 36018 total | 24128 detected | 11890 with volume 0 (33.0%)
+
+  (A) Including volume-0 frames  (N = 36018)
+    Descriptor                              Mean         Std         Min         Max
+    --------------------------------------------------------------------------------
+    Pocket Volume (Å³)                   121.050      98.691       0.000     479.720
+    Hydrophobicity Score                  13.585      15.418     -38.500      87.500
+    Mean Local Hydrophobic Density        14.032      15.344       0.000     103.690
+    Polarity Score                         1.562       1.249       0.000       5.000
+
+  (B) Excluding volume-0 frames  (N = 24128)
+    Descriptor                              Mean         Std         Min         Max
+    --------------------------------------------------------------------------------
+    Pocket Volume (Å³)                   180.702      61.320      23.420     479.720
+    Hydrophobicity Score                  20.280      14.801     -38.500      87.500
+    Mean Local Hydrophobic Density        20.947      14.375       0.000     103.690
+    Polarity Score                         2.331       0.732       0.000       5.000
+
+============================================================================
+SP4
+============================================================================
+  Frames: 36018 total | 22322 detected | 13696 with volume 0 (38.0%)
+
+  (A) Including volume-0 frames  (N = 36018)
+    Descriptor                              Mean         Std         Min         Max
+    --------------------------------------------------------------------------------
+    Pocket Volume (Å³)                    88.133      76.289       0.000     305.050
+    Hydrophobicity Score                   7.269       8.858     -38.500      63.000
+    Mean Local Hydrophobic Density         4.260       7.066       0.000      72.110
+    Polarity Score                         2.289       1.846       0.000       5.000
+
+  (B) Excluding volume-0 frames  (N = 22322)
+    Descriptor                              Mean         Std         Min         Max
+    --------------------------------------------------------------------------------
+    Pocket Volume (Å³)                   142.209      41.240      23.570     305.050
+    Hydrophobicity Score                  11.730       8.619     -38.500      63.000
+    Mean Local Hydrophobic Density         6.873       7.911       0.000      72.110
+    Polarity Score                         3.694       0.556       1.000       5.000
+
+============================================================================
+SP5
+============================================================================
+  Frames: 36018 total | 23957 detected | 12061 with volume 0 (33.5%)
+
+  (A) Including volume-0 frames  (N = 36018)
+    Descriptor                              Mean         Std         Min         Max
+    --------------------------------------------------------------------------------
+    Pocket Volume (Å³)                    96.566      85.311       0.000     402.790
+    Hydrophobicity Score                  28.872      24.220     -23.000      99.670
+    Mean Local Hydrophobic Density         6.766       8.653       0.000      75.520
+    Polarity Score                         1.745       1.476       0.000       5.000
+
+  (B) Excluding volume-0 frames  (N = 23957)
+    Descriptor                              Mean         Std         Min         Max
+    --------------------------------------------------------------------------------
+    Pocket Volume (Å³)                   145.181      62.321      23.800     402.790
+    Hydrophobicity Score                  43.407      15.842     -23.000      99.670
+    Mean Local Hydrophobic Density        10.173       8.827       0.000      75.520
+    Polarity Score                         2.624       0.985       0.000       5.000
+
+============================================================================
+SP6
+============================================================================
+  Frames: 36018 total | 22341 detected | 13677 with volume 0 (38.0%)
+
+  (A) Including volume-0 frames  (N = 36018)
+    Descriptor                              Mean         Std         Min         Max
+    --------------------------------------------------------------------------------
+    Pocket Volume (Å³)                    86.734      81.095       0.000     314.330
+    Hydrophobicity Score                  -1.233       9.498     -30.330      43.500
+    Mean Local Hydrophobic Density         1.120       2.963       0.000      38.280
+    Polarity Score                         2.773       2.339       0.000       7.000
+
+  (B) Excluding volume-0 frames  (N = 22341)
+    Descriptor                              Mean         Std         Min         Max
+    --------------------------------------------------------------------------------
+    Pocket Volume (Å³)                   139.832      56.370      23.920     314.330
+    Hydrophobicity Score                  -1.988      11.998     -30.330      43.500
+    Mean Local Hydrophobic Density         1.805       3.594       0.000      38.280
+    Polarity Score                         4.471       1.109       1.000       7.000
+
